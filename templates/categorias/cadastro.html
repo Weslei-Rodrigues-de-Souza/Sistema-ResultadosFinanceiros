@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Categorias</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+            <i class="fas fa-plus me-1"></i> Nova Categoria
+        </button>
+    </div>
+
+    <!-- Categorias Ativas -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Categorias Ativas</strong>
+            <span class="badge bg-success">{{ categorias_ativas|length }}</span>
+        </div>
+        <div class="card-body">
+            {% if categorias_ativas %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Faturamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias_ativas %}
+                        <tr>
+                            <td>
+                                <strong>{{ categoria.nome }}</strong>
+                                {% if categoria.eh_faturamento %}
+                                <i class="fas fa-dollar-sign text-success ms-1" title="Categoria de Faturamento"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ categoria.descricao or '-' }}</td>
+                            <td>
+                                {% if categoria.eh_faturamento %}
+                                <span class="badge bg-success">Sim</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Não</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked 
+                                           onchange="toggleCategoria({{ categoria.id }}, this.checked)"
+                                           {% if not categoria.pode_ser_excluida() %}disabled{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="badge bg-success badge-status ms-1">Ativa</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="editarCategoria({{ categoria.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                Nenhuma categoria ativa encontrada.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Categorias Inativas -->
+    {% if categorias_inativas %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Categorias Inativas</strong>
+            <span class="badge bg-danger">{{ categorias_inativas|length }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Inativada em</th>
+                            <th>Por</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias_inativas %}
+                        <tr class="registro-inativo">
+                            <td>{{ categoria.nome }}</td>
+                            <td>{{ categoria.data_inativacao.strftime('%d/%m/%Y %H:%M') if categoria.data_inativacao else '-' }}</td>
+                            <td>{{ categoria.usuario_inativacao or '-' }}</td>
+                            <td>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           onchange="toggleCategoria({{ categoria.id }}, this.checked)">
+                                    <span class="toggle-slider disabled"></span>
+                                </label>
+                                <span class="badge bg-danger badge-status ms-1">Inativa</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="reativarCategoria({{ categoria.id }})">
+                                    <i class="fas fa-undo"></i> Reativar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Nova Categoria -->
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('nova_categoria') }}" class="modal-content">
+            {{ form.hidden_tag() }}
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.descricao.label(class="form-label") }}
+                    {{ form.descricao(class="form-control", rows="3") }}
+                </div>
+                <div class="form-check">
+                    {{ form.eh_faturamento(class="form-check-input") }}
+                    {{ form.eh_faturamento.label(class="form-check-label") }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCategoria(categoriaId, ativo) {
+    const url = ativo ? `/categorias/reativar/${categoriaId}` : `/categorias/excluir/${categoriaId}`;
+    const method = 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Erro: ' + data.message);
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        location.reload();
+    });
+}
+
+function reativarCategoria(categoriaId) {
+    if (confirm('Deseja reativar esta categoria?')) {
+        fetch(`/categorias/reativar/${categoriaId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            location.reload();
+        });
+    }
+}
+
+function editarCategoria(categoriaId) {
+    // Implementar edição
+    alert('Função de edição será implementada');
+}
+</script>
+{% endblock %}

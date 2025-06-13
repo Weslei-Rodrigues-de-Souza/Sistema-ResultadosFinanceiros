@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Gerenciar Contas</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2" role="group">
+            <a href="{{ url_for('baixar_template_contas') }}" class="btn btn-outline-info">
+                <i class="fas fa-download me-2"></i>Baixar Template
+            </a>
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImportar">
+                <i class="fas fa-upload me-2"></i>Importar Planilha
+            </button>
+        </div>
+        {% if categorias %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaConta">
+            <i class="fas fa-plus me-2"></i>Nova Conta
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filtros Compactos -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Filtros</h5>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="aplicarFiltros()">
+                <i class="fas fa-filter"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparFiltros()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3 col-6">
+                <select class="form-select form-select-sm" id="filtroCategoria">
+                    <option value="">Todas as categorias</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-6">
+                <select class="form-select form-select-sm" id="filtroAno">
+                    <option value="">Ano</option>
+                    {% for ano in anos %}
+                    <option value="{{ ano }}">{{ ano }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-6">
+                <select class="form-select form-select-sm" id="filtroMes">
+                    <option value="">Mês</option>
+                    <option value="01">Jan</option>
+                    <option value="02">Fev</option>
+                    <option value="03">Mar</option>
+                    <option value="04">Abr</option>
+                    <option value="05">Mai</option>
+                    <option value="06">Jun</option>
+                    <option value="07">Jul</option>
+                    <option value="08">Ago</option>
+                    <option value="09">Set</option>
+                    <option value="10">Out</option>
+                    <option value="11">Nov</option>
+                    <option value="12">Dez</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-6">
+                <input type="date" class="form-control form-control-sm" id="filtroDataInicio" placeholder="Data Início">
+            </div>
+            <div class="col-md-3 col-12">
+                <input type="date" class="form-control form-control-sm" id="filtroDataFim" placeholder="Data Fim">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Contas -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Contas Registradas</h5>
+        <span class="badge bg-light text-white" id="contadorRegistros">{{ contas|length }} registros</span>
+    </div>
+    <div class="card-body">
+        {% if contas %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="tabelaContas">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conta in contas %}
+                    <tr data-categoria="{{ conta.categoria_id }}" data-data="{{ conta.data.strftime('%Y-%m-%d') }}" data-conta-id="{{ conta.id }}">
+                        <td>{{ conta.data.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if conta.categoria.eh_faturamento %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-dollar-sign me-1"></i>{{ conta.categoria.nome }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary">
+                                    {{ conta.categoria.nome }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ conta.descricao or '-' }}</td>
+                        <td class="text-end">
+                            <span class="valor-positivo">
+                                R$ {{ "%.2f"|format(conta.valor)|replace(".", "#")|replace(",", ".")|replace("#", ",") }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editarConta({{ conta.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="excluirConta({{ conta.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif categorias %}
+        <div class="text-center py-5">
+            <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhuma conta registrada</h5>
+            <p class="text-muted">Comece registrando sua primeira conta financeira ou importe via planilha!</p>
+            <div class="d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaConta">
+                    <i class="fas fa-plus me-2"></i>Registrar Primeira Conta
+                </button>
+                <a href="{{ url_for('baixar_template_contas') }}" class="btn btn-outline-info">
+                    <i class="fas fa-download me-2"></i>Baixar Template
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h5 class="text-warning">Nenhuma categoria encontrada</h5>
+            <p class="text-muted">Você precisa criar categorias antes de registrar contas.</p>
+            <a href="{{ url_for('listar_categorias') }}" class="btn btn-warning">
+                <i class="fas fa-tags me-2"></i>Criar Categorias
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Nova Conta -->
+{% if categorias %}
+<div class="modal fade" id="modalNovaConta" tabindex="-1" aria-labelledby="modalNovaContaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNovaContaLabel">Nova Conta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('nova_conta') }}" id="formNovaConta">
+                <div class="modal-body">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.categoria_id.label(class="form-label") }}
+                                {{ form.categoria_id(class="form-select") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.data.label(class="form-label") }}
+                                {{ form.data(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.valor.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.valor(class="form-control", placeholder="0,00", step="0.01") }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.descricao.label(class="form-label") }}
+                                {{ form.descricao(class="form-control", placeholder="Descrição da conta (opcional)") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Salvar Conta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Editar Conta -->
+<div class="modal fade" id="modalEditarConta" tabindex="-1" aria-labelledby="modalEditarContaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarContaLabel">Editar Conta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarConta">
+                <div class="modal-body">
+                    <input type="hidden" id="editContaId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCategoria" class="form-label">Categoria</label>
+                                <select class="form-select" id="editCategoria" required>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editData" class="form-label">Data</label>
+                                <input type="date" class="form-control" id="editData" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editValor" class="form-label">Valor</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="editValor" step="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editDescricao" class="form-label">Descrição</label>
+                                <input type="text" class="form-control" id="editDescricao">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Atualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Importar Planilha -->
+<div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportarLabel">Importar Contas via Planilha</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('importar_contas') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% if not categorias %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Você precisa cadastrar categorias antes de importar contas.
+                        <a href="{{ url_for('listar_categorias') }}" class="alert-link">Clique aqui para cadastrar categorias</a>.
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label for="arquivo" class="form-label">Selecione a planilha Excel</label>
+                        <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".xlsx,.xls" required>
+                        <div class="form-text">Formatos aceitos: .xlsx, .xls</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Instruções:</h6>
+                        <ol class="mb-0">
+                            <li>Baixe o template clicando em "Baixar Template"</li>
+                            <li>Preencha a planilha com suas contas</li>
+                            <li>Use apenas categorias cadastradas no sistema</li>
+                            <li>Formato da data: AAAA-MM-DD (ex: 2025-01-15)</li>
+                            <li>Contas com categorias inválidas serão ignoradas</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <strong>Categorias disponíveis:</strong><br>
+                        {% for categoria in categorias %}
+                            <span class="badge bg-primary me-1">{{ categoria.nome }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {% if categorias %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-2"></i>Importar Planilha
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Definir data atual no campo data
+document.addEventListener('DOMContentLoaded', function() {
+    const dataField = document.getElementById('{{ form.data.id }}');
+    if (dataField && !dataField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dataField.value = today;
+    }
+    
+    // Aplicar formatação de moeda
+    formatarValoresMonetarios();
+});
+
+function formatarValoresMonetarios() {
+    const elementosMoeda = document.querySelectorAll('.formato-moeda');
+    elementosMoeda.forEach(elemento => {
+        const valorTexto = elemento.textContent.trim();
+        
+        // Extrair apenas números do texto
+        const valorNumerico = parseFloat(valorTexto.replace(/[^\d.-]/g, ''));
+        
+        if (!isNaN(valorNumerico)) {
+            // Aplicar formatação brasileira correta
+            const valorFormatado = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valorNumerico);
+            
+            elemento.textContent = valorFormatado;
+        }
+    });
+}
+
+function editarConta(id) {
+    // Buscar dados da conta
+    fetch(`/contas/editar/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('editContaId').value = data.id;
+            document.getElementById('editCategoria').value = data.categoria_id;
+            document.getElementById('editData').value = data.data;
+            document.getElementById('editValor').value = data.valor;
+            document.getElementById('editDescricao').value = data.descricao || '';
+            
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarConta'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar conta:', error);
+            mostrarAlerta('Erro ao carregar dados da conta', 'danger');
+        });
+}
+
+function excluirConta(id) {
+    if (confirm('Tem certeza que deseja excluir esta conta?')) {
+        fetch(`/contas/excluir/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                // Remover a linha da tabela
+                const linha = document.querySelector(`tr[data-conta-id="${id}"]`);
+                if (linha) {
+                    linha.remove();
+                }
+                
+                // Atualizar contador
+                atualizarContador();
+                
+                // Mostrar mensagem de sucesso
+                mostrarAlerta('Conta excluída com sucesso!', 'success');
+            } else {
+                mostrarAlerta('Erro ao excluir conta: ' + result.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrarAlerta('Erro ao excluir conta', 'danger');
+        });
+    }
+}
+
+function atualizarContador() {
+    const tabela = document.getElementById('tabelaContas');
+    if (tabela) {
+        const linhasVisiveis = Array.from(tabela.getElementsByTagName('tbody')[0].getElementsByTagName('tr'))
+            .filter(linha => linha.style.display !== 'none');
+        
+        document.getElementById('contadorRegistros').textContent = `${linhasVisiveis.length} registros`;
+    }
+}
+
+function mostrarAlerta(mensagem, tipo) {
+    // Remover alertas existentes
+    const alertasExistentes = document.querySelectorAll('.alert-temp');
+    alertasExistentes.forEach(alerta => alerta.remove());
+    
+    // Criar novo alerta
+    const alerta = document.createElement('div');
+    alerta.className = `alert alert-${tipo} alert-dismissible fade show alert-temp`;
+    alerta.innerHTML = `
+        ${mensagem}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Inserir no início do main-content
+    const mainContent = document.querySelector('.main-content');
+    mainContent.insertBefore(alerta, mainContent.firstChild);
+    
+    // Auto-remover após 5 segundos
+    setTimeout(() => {
+        if (alerta.parentNode) {
+            alerta.remove();
+        }
+    }, 5000);
+}
+
+// Submissão do formulário de edição
+document.getElementById('formEditarConta').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const id = document.getElementById('editContaId').value;
+    const dados = {
+        categoria_id: document.getElementById('editCategoria').value,
+        data: document.getElementById('editData').value,
+        valor: document.getElementById('editValor').value,
+        descricao: document.getElementById('editDescricao').value
+    };
+    
+    fetch(`/contas/editar/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarConta'));
+            modal.hide();
+            
+            // Atualizar apenas a linha editada
+            atualizarLinhaTabela(id, dados);
+            
+            // Mostrar mensagem de sucesso
+            mostrarAlerta(result.message, 'success');
+        } else {
+            mostrarAlerta('Erro: ' + result.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        mostrarAlerta('Erro ao atualizar conta', 'danger');
+    });
+});
+
+function atualizarLinhaTabela(id, dados) {
+    const linha = document.querySelector(`tr[data-conta-id="${id}"]`);
+    if (linha) {
+        // Buscar nome da categoria
+        const selectCategoria = document.getElementById('editCategoria');
+        const nomeCategoria = selectCategoria.options[selectCategoria.selectedIndex].text;
+        
+        // Atualizar células da linha
+        const celulas = linha.getElementsByTagName('td');
+        celulas[0].textContent = new Date(dados.data).toLocaleDateString('pt-BR');
+        celulas[1].innerHTML = `<span class="badge bg-primary">${nomeCategoria}</span>`;
+        celulas[2].textContent = dados.descricao || '-';
+        
+        // Formatar valor corretamente
+        const valorFormatado = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(parseFloat(dados.valor));
+        
+        celulas[3].innerHTML = `<span class="valor-positivo">${valorFormatado}</span>`;
+        
+        // Atualizar atributos data
+        linha.setAttribute('data-categoria', dados.categoria_id);
+        linha.setAttribute('data-data', dados.data);
+    }
+}
+
+// Funções de filtro
+function aplicarFiltros() {
+    const categoria = document.getElementById('filtroCategoria').value;
+    const ano = document.getElementById('filtroAno').value;
+    const mes = document.getElementById('filtroMes').value;
+    const dataInicio = document.getElementById('filtroDataInicio').value;
+    const dataFim = document.getElementById('filtroDataFim').value;
+    
+    const tabela = document.getElementById('tabelaContas');
+    const linhas = tabela.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    let contadorVisivel = 0;
+    
+    for (let i = 0; i < linhas.length; i++) {
+        let mostrar = true;
+        const linha = linhas[i];
+        const categoriaLinha = linha.getAttribute('data-categoria');
+        const dataLinha = linha.getAttribute('data-data');
+        
+        // Filtro por categoria
+        if (categoria && categoriaLinha !== categoria) {
+            mostrar = false;
+        }
+        
+        // Filtro por ano
+        if (ano && dataLinha.substring(0, 4) !== ano) {
+            mostrar = false;
+        }
+        
+        // Filtro por mês
+        if (mes && dataLinha.substring(5, 7) !== mes) {
+            mostrar = false;
+        }
+        
+        // Filtro por data início
+        if (dataInicio && dataLinha < dataInicio) {
+            mostrar = false;
+        }
+        
+        // Filtro por data fim
+        if (dataFim && dataLinha > dataFim) {
+            mostrar = false;
+        }
+        
+        linha.style.display = mostrar ? '' : 'none';
+        if (mostrar) contadorVisivel++;
+    }
+    
+    // Atualizar contador de registros
+    document.getElementById('contadorRegistros').textContent = `${contadorVisivel} registros`;
+}
+
+function limparFiltros() {
+    document.getElementById('filtroCategoria').value = '';
+    document.getElementById('filtroAno').value = '';
+    document.getElementById('filtroMes').value = '';
+    document.getElementById('filtroDataInicio').value = '';
+    document.getElementById('filtroDataFim').value = '';
+    
+    // Mostrar todas as linhas
+    const tabela = document.getElementById('tabelaContas');
+    if (tabela) {
+        const linhas = tabela.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let i = 0; i < linhas.length; i++) {
+            linhas[i].style.display = '';
+        }
+        
+        // Restaurar contador original
+        document.getElementById('contadorRegistros').textContent = `${linhas.length} registros`;
+    }
+}
+</script>
+{% endblock %}

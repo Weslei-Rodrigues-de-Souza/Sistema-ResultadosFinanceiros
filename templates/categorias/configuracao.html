@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Configurações de Cálculo</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Lucro Bruto</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Receitas - (Impostos + Custos + Despesas)</p>
+                <button class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Lucro Líquido</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Lucro Bruto - Investimentos</p>
+                <button class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">Reserva de Caixa</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Lucro Líquido - Retiradas</p>
+                <button class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Configurações Avançadas</h5>
+                <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
