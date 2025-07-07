@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Configurações de Cálculo</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-success" onclick="salvarTodasConfiguracoes()">
+            <i class="fas fa-save me-2"></i>Salvar Todas as Configurações
+        </button>
+    </div>
+</div>
+
+<!-- Cards de Configuração -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-success h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Lucro Bruto</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Configure quais categorias compõem o cálculo do lucro bruto.</p>
+                <div class="mb-3">
+                    <small class="text-muted">Fórmula atual:</small>
+                    <div class="alert alert-light border" id="formulaLucroBruto">
+                        <em>Nenhuma configuração definida</em>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalLucroBruto">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-info h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Lucro Líquido</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Configure quais categorias compõem o cálculo do lucro líquido.</p>
+                <div class="mb-3">
+                    <small class="text-muted">Fórmula atual:</small>
+                    <div class="alert alert-light border" id="formulaLucroLiquido">
+                        <em>Nenhuma configuração definida</em>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalLucroLiquido">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-warning h-100">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-piggy-bank me-2"></i>Reserva de Caixa</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Configure quais categorias compõem o cálculo da reserva de caixa.</p>
+                <div class="mb-3">
+                    <small class="text-muted">Fórmula atual:</small>
+                    <div class="alert alert-light border" id="formulaReservaCaixa">
+                        <em>Nenhuma configuração definida</em>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalReservaCaixa">
+                    <i class="fas fa-cog me-1"></i>Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo das Configurações -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Resumo das Configurações Atuais</h5>
+    </div>
+    <div class="card-body">
+        {% if configuracoes %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Indicador</th>
+                        <th>Categorias Positivas</th>
+                        <th>Categorias Negativas</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for config in configuracoes %}
+                    <tr>
+                        <td><strong>{{ config.nome.replace('_', ' ').title() }}</strong></td>
+                        <td>
+                            {% if config.categorias_positivas %}
+                                {% set pos_ids = config.categorias_positivas|from_json %}
+                                {% for cat in categorias if cat.id in pos_ids %}
+                                    <span class="badge bg-success me-1">{{ cat.nome }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <em class="text-muted">Nenhuma</em>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if config.categorias_negativas %}
+                                {% set neg_ids = config.categorias_negativas|from_json %}
+                                {% for cat in categorias if cat.id in neg_ids %}
+                                    <span class="badge bg-danger me-1">{{ cat.nome }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <em class="text-muted">Nenhuma</em>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if config.ativa %}
+                                <span class="badge bg-success">Ativa</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editarConfiguracao('{{ config.nome }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhuma configuração definida</h5>
+            <p class="text-muted">Configure os cálculos usando os botões acima para definir como calcular os indicadores financeiros.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Lucro Bruto -->
+<div class="modal fade" id="modalLucroBruto" tabindex="-1" aria-labelledby="modalLucroBrutoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalLucroBrutoLabel">Configurar Lucro Bruto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formLucroBruto">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lucro Bruto</strong> é calculado somando as categorias positivas e subtraindo as negativas.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Categorias que Somam (+)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="lb_pos_{{ categoria.id }}" name="lucro_bruto_positivas">
+                                    <label class="form-check-label" for="lb_pos_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Categorias que Subtraem (-)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="lb_neg_{{ categoria.id }}" name="lucro_bruto_negativas">
+                                    <label class="form-check-label" for="lb_neg_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Prévia da Fórmula:</label>
+                        <div class="alert alert-light border" id="previewLucroBruto">
+                            <em>Selecione as categorias para ver a fórmula</em>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Salvar Configuração
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Lucro Líquido -->
+<div class="modal fade" id="modalLucroLiquido" tabindex="-1" aria-labelledby="modalLucroLiquidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalLucroLiquidoLabel">Configurar Lucro Líquido</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formLucroLiquido">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lucro Líquido</strong> é calculado somando as categorias positivas e subtraindo as negativas.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Categorias que Somam (+)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="ll_pos_{{ categoria.id }}" name="lucro_liquido_positivas">
+                                    <label class="form-check-label" for="ll_pos_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Categorias que Subtraem (-)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="ll_neg_{{ categoria.id }}" name="lucro_liquido_negativas">
+                                    <label class="form-check-label" for="ll_neg_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Prévia da Fórmula:</label>
+                        <div class="alert alert-light border" id="previewLucroLiquido">
+                            <em>Selecione as categorias para ver a fórmula</em>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-2"></i>Salvar Configuração
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reserva de Caixa -->
+<div class="modal fade" id="modalReservaCaixa" tabindex="-1" aria-labelledby="modalReservaCaixaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalReservaCaixaLabel">Configurar Reserva de Caixa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formReservaCaixa">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Reserva de Caixa</strong> é calculada somando as categorias positivas e subtraindo as negativas.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Categorias que Somam (+)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="rc_pos_{{ categoria.id }}" name="reserva_caixa_positivas">
+                                    <label class="form-check-label" for="rc_pos_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Categorias que Subtraem (-)</h6>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for categoria in categorias %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ categoria.id }}" 
+                                           id="rc_neg_{{ categoria.id }}" name="reserva_caixa_negativas">
+                                    <label class="form-check-label" for="rc_neg_{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <span class="badge bg-success ms-1">Faturamento</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Prévia da Fórmula:</label>
+                        <div class="alert alert-light border" id="previewReservaCaixa">
+                            <em>Selecione as categorias para ver a fórmula</em>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-2"></i>Salvar Configuração
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Atualizar preview das fórmulas em tempo real
+document.addEventListener('DOMContentLoaded', function() {
+    // Lucro Bruto
+    const lbPositivas = document.querySelectorAll('input[name="lucro_bruto_positivas"]');
+    const lbNegativas = document.querySelectorAll('input[name="lucro_bruto_negativas"]');
+    
+    lbPositivas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('lucro_bruto'));
+    });
+    lbNegativas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('lucro_bruto'));
+    });
+    
+    // Lucro Líquido
+    const llPositivas = document.querySelectorAll('input[name="lucro_liquido_positivas"]');
+    const llNegativas = document.querySelectorAll('input[name="lucro_liquido_negativas"]');
+    
+    llPositivas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('lucro_liquido'));
+    });
+    llNegativas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('lucro_liquido'));
+    });
+    
+    // Reserva de Caixa
+    const rcPositivas = document.querySelectorAll('input[name="reserva_caixa_positivas"]');
+    const rcNegativas = document.querySelectorAll('input[name="reserva_caixa_negativas"]');
+    
+    rcPositivas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('reserva_caixa'));
+    });
+    rcNegativas.forEach(input => {
+        input.addEventListener('change', () => atualizarPreview('reserva_caixa'));
+    });
+    
+    // Carregar configurações existentes
+    carregarConfiguracoes();
+});
+
+function atualizarPreview(tipo) {
+    const positivas = [];
+    const negativas = [];
+    
+    document.querySelectorAll(`input[name="${tipo}_positivas"]:checked`).forEach(input => {
+        const label = document.querySelector(`label[for="${input.id}"]`).textContent.trim();
+        positivas.push(label);
+    });
+    
+    document.querySelectorAll(`input[name="${tipo}_negativas"]:checked`).forEach(input => {
+        const label = document.querySelector(`label[for="${input.id}"]`).textContent.trim();
+        negativas.push(label);
+    });
+    
+    let formula = '';
+    if (positivas.length > 0) {
+        formula += positivas.join(' + ');
+    }
+    if (negativas.length > 0) {
+        if (formula) formula += ' - ';
+        formula += '(' + negativas.join(' + ') + ')';
+    }
+    
+    const previewElement = document.getElementById(`preview${tipo.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}`);
+    previewElement.innerHTML = formula || '<em>Selecione as categorias para ver a fórmula</em>';
+}
+
+function carregarConfiguracoes() {
+    fetch('/api/configuracoes')
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar fórmulas nos cards
+            data.forEach(config => {
+                const elementId = `formula${config.nome.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}`;
+                const element = document.getElementById(elementId);
+                if (element && config.formula) {
+                    element.innerHTML = config.formula;
+                }
+            });
+        })
+        .catch(error => console.error('Erro ao carregar configurações:', error));
+}
+
+// Formulários de configuração
+document.getElementById('formLucroBruto').addEventListener('submit', function(e) {
+    e.preventDefault();
+    salvarConfiguracao('lucro_bruto');
+});
+
+document.getElementById('formLucroLiquido').addEventListener('submit', function(e) {
+    e.preventDefault();
+    salvarConfiguracao('lucro_liquido');
+});
+
+document.getElementById('formReservaCaixa').addEventListener('submit', function(e) {
+    e.preventDefault();
+    salvarConfiguracao('reserva_caixa');
+});
+
+function salvarConfiguracao(tipo) {
+    const positivas = [];
+    const negativas = [];
+    
+    document.querySelectorAll(`input[name="${tipo}_positivas"]:checked`).forEach(input => {
+        positivas.push(parseInt(input.value));
+    });
+    
+    document.querySelectorAll(`input[name="${tipo}_negativas"]:checked`).forEach(input => {
+        negativas.push(parseInt(input.value));
+    });
+    
+    const data = {
+        nome: tipo,
+        categorias_positivas: positivas,
+        categorias_negativas: negativas
+    };
+    
+    fetch('/api/salvar-configuracao', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Configuração salva com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao salvar configuração: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar configuração');
+    });
+}
+
+function editarConfiguracao(nome) {
+    // Abrir modal correspondente
+    const modalId = `modal${nome.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}`;
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+}
+
+function salvarTodasConfiguracoes() {
+    alert('Funcionalidade de salvar todas as configurações será implementada');
+}
+</script>
+{% endblock %}

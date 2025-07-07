@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Elevalucro - Resultados Financeiros{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+    :root {
+        --primary-color: #ff6b35;
+        --secondary-color: #34495e;
+        --accent-color: #ff6b35;
+        --success-color: #27ae60;
+        --danger-color: #e74c3c;
+        --warning-color: #f39c12;
+        --info-color: #3498db;
+        --light-gray: #ecf0f1;
+        --medium-gray: #95a5a6;
+        --dark-gray: #2c3e50;
+        --text-dark: #ffffff;
+        --text-light: #ecf0f1;
+        --text-muted: #95a5a6;
+        --sidebar-bg: linear-gradient(180deg, #1a1a1a 0%, #2c2c2c 100%);
+        --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+        --background-dark: #000000;
+        --card-bg: #1a1a1a;
+        --border-color: #333333;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--background-dark);
+        color: var(--text-dark);
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+
+    /* Navbar */
+    .navbar {
+        background: var(--sidebar-bg);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        border-bottom: 3px solid var(--accent-color);
+    }
+
+    .navbar-brand {
+        font-weight: 700;
+        color: white !important;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .navbar-nav .nav-link {
+        color: var(--text-light) !important;
+        transition: color 0.3s ease;
+    }
+
+    .navbar-nav .nav-link:hover {
+        color: var(--accent-color) !important;
+    }
+
+    .navbar-toggler {
+        border-color: var(--accent-color);
+    }
+
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    /* Logo */
+    .logo-elevalucro {
+        max-height: 40px;
+        width: auto;
+        margin-right: 10px;
+        border-radius: 5px;
+    }
+
+    /* Container principal */
+    .main-container {
+        display: flex;
+        min-height: 100vh;
+        padding-top: 56px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 280px;
+        background: var(--sidebar-bg);
+        padding: 20px 0;
+        position: fixed;
+        top: 56px;
+        bottom: 0;
+        left: 0;
+        overflow-y: auto;
+        z-index: 100;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar .nav-link {
+        color: var(--light-gray);
+        padding: 15px 25px;
+        margin: 3px 15px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        display: block;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+    }
+
+    .sidebar .nav-link:hover {
+        color: #fff;
+        background-color: rgba(255, 107, 53, 0.1);
+        transform: translateX(5px);
+        border-left: 3px solid var(--accent-color);
+    }
+
+    .sidebar .nav-link.active {
+        color: #fff;
+        background-color: rgba(255, 107, 53, 0.2);
+        border-left: 3px solid var(--accent-color);
+    }
+
+    .sidebar .nav-link i {
+        margin-right: 12px;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Main content */
+    .main-content {
+        flex: 1;
+        margin-left: 280px;
+        padding: 30px;
+        background-color: var(--background-dark);
+        min-height: calc(100vh - 56px);
+    }
+
+    /* Cards */
+    .card {
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+        margin-bottom: 20px;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(255, 107, 53, 0.2);
+        transform: translateY(-2px);
+        border-color: var(--accent-color);
+    }
+
+    .card-header {
+        background: var(--sidebar-bg);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        font-weight: 600;
+        padding: 20px;
+        border-bottom: 2px solid var(--accent-color);
+    }
+
+    .card-body {
+        padding: 20px;
+        background-color: var(--card-bg);
+        border-radius: 0 0 15px 15px;
+    }
+
+    /* Botões */
+    .btn {
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 12px 25px;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #ff8c42 0%, var(--primary-color) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, var(--medium-gray) 0%, #7f8c8d 100%);
+        color: white;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);
+        color: white;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--info-color) 0%, #5dade2 100%);
+        color: white;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%);
+        color: white;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        background: transparent;
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-secondary {
+        border: 2px solid var(--medium-gray);
+        color: var(--medium-gray);
+        background: transparent;
+    }
+
+    .btn-outline-success {
+        border: 2px solid var(--success-color);
+        color: var(--success-color);
+        background: transparent;
+    }
+
+    .btn-outline-info {
+        border: 2px solid var(--info-color);
+        color: var(--info-color);
+        background: transparent;
+    }
+
+    .btn-outline-warning {
+        border: 2px solid var(--warning-color);
+        color: var(--warning-color);
+        background: transparent;
+    }
+
+    .btn-outline-danger {
+        border: 2px solid var(--danger-color);
+        color: var(--danger-color);
+        background: transparent;
+    }
+
+    .btn-sm {
+        padding: 8px 15px;
+        font-size: 0.875rem;
+    }
+
+    /* Alertas */
+    .alert {
+        border: none;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid;
+    }
+
+    .alert-success {
+        background: linear-gradient(90deg, rgba(39, 174, 96, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%);
+        color: var(--success-color);
+        border-left-color: var(--success-color);
+    }
+
+    .alert-info {
+        background: linear-gradient(90deg, rgba(52, 152, 219, 0.1) 0%, rgba(93, 173, 226, 0.1) 100%);
+        color: var(--info-color);
+        border-left-color: var(--info-color);
+    }
+
+    .alert-warning {
+        background: linear-gradient(90deg, rgba(243, 156, 18, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
+        color: var(--warning-color);
+        border-left-color: var(--warning-color);
+    }
+
+    .alert-danger {
+        background: linear-gradient(90deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%);
+        color: var(--danger-color);
+        border-left-color: var(--danger-color);
+    }
+
+    /* Tabelas */
+    .table {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table th,
+    .table td {
+        border-color: var(--border-color);
+        padding: 15px;
+        vertical-align: middle;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(255, 107, 53, 0.1);
+        color: var(--text-dark);
+    }
+
+    /* Badges */
+    .badge {
+        font-size: 0.8em;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .badge.bg-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%) !important;
+        color: white;
+    }
+
+    .badge.bg-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%) !important;
+        color: white;
+    }
+
+    .badge.bg-warning {
+        background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%) !important;
+        color: white;
+    }
+
+    .badge.bg-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%) !important;
+        color: white;
+    }
+
+    .badge.bg-secondary {
+        background: linear-gradient(135deg, var(--medium-gray) 0%, #7f8c8d 100%) !important;
+        color: white;
+    }
+
+    /* Modais */
+    .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+
+    .modal-header {
+        background: var(--sidebar-bg);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        border-bottom: 2px solid var(--accent-color);
+    }
+
+    .modal-body {
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+
+    .modal-footer {
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        border-radius: 0 0 15px 15px;
+    }
+
+    /* Forms */
+    .form-control, 
+    .form-select {
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+
+    .form-control:focus, 
+    .form-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .form-label {
+        color: var(--text-dark);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-check-input {
+        background-color: var(--card-bg);
+        border: 2px solid var(--border-color);
+    }
+
+    .form-check-input:checked {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .form-check-label {
+        color: var(--text-dark);
+    }
+
+    /* Toggle switches */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #28a745;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    .toggle-slider.disabled {
+        background-color: #dc3545;
+        cursor: not-allowed;
+    }
+
+    .registro-inativo {
+        opacity: 0.6;
+        background-color: rgba(248, 249, 250, 0.1);
+    }
+
+    .badge-status {
+        font-size: 0.75em;
+    }
+
+    /* Toasts */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+    }
+    
+    .toast {
+        min-width: 300px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+    
+    .toast-success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast-error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-warning {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .toast-info {
+        border-left: 4px solid #17a2b8;
+    }
+
+    /* Dropdown */
+    .dropdown-menu {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .dropdown-item {
+        color: var(--text-dark);
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(255, 107, 53, 0.1);
+        color: var(--text-dark);
+    }
+
+    /* List groups */
+    .list-group-item {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(255, 107, 53, 0.1);
+    }
+
+    /* Headers */
+    .h1, .h2, .h3, .h4, .h5, .h6,
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-dark);
+        font-weight: 600;
+    }
+
+    /* Text utilities */
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .text-white {
+        color: white !important;
+    }
+
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+
+    .text-success {
+        color: var(--success-color) !important;
+    }
+
+    .text-info {
+        color: var(--info-color) !important;
+    }
+
+    .text-warning {
+        color: var(--warning-color) !important;
+    }
+
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+
+    .sidebar-heading {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        color: #95a5a6 !important;
+        border-bottom: 1px solid #333333;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0;
+            padding: 20px 15px;
+        }
+
+        .toast-container {
+            right: 10px;
+            left: 10px;
+            max-width: none;
+        }
+        
+        .toast {
+            min-width: auto;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .main-content {
+            padding: 15px 10px;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            font-size: 0.875rem;
+        }
+    }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Container para toasts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='images/logo_elevalucro-02.jpg') }}" alt="ELEVALUCRO" class="logo-elevalucro">
+            </a>
+            <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-building"></i>
+                        <span id="empresa-selecionada">
+                            {% if empresa_selecionada %}
+                                {{ empresa_selecionada.nome }}
+                            {% else %}
+                                Selecione uma empresa
+                            {% endif %}
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('empresas') }}">
+                            <i class="fas fa-cog"></i> Gerenciar empresas
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('empresas') }}">
+                            <i class="fas fa-exchange-alt"></i> Trocar empresa
+                        </a></li>
+                    </ul>
+                </div>
+
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.nome_completo }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container principal -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-chart-line"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'empresas' }}" href="{{ url_for('empresas') }}">
+                        <i class="fas fa-building"></i> Empresas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'listar_categorias' }}" href="{{ url_for('listar_categorias') }}">
+                        <i class="fas fa-tags"></i>Categorias
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'listar_contas' }}" href="{{ url_for('listar_contas') }}">
+                        <i class="fas fa-money-bill-wave"></i>Contas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'configuracao_calculo' }}" href="{{ url_for('configuracao_calculo') }}">
+                        <i class="fas fa-cog"></i>Configurações
+                    </a>
+                </li>
+                
+                <!-- Seção Administrativa -->
+                {% if current_user.is_admin %}
+                <li class="nav-item mt-3">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Administração</span>
+                    </h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'listar_usuarios' }}" href="{{ url_for('listar_usuarios') }}">
+                        <i class="fas fa-users"></i>Usuários
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'registro' }}" href="{{ url_for('registro') }}">
+                        <i class="fas fa-user-plus"></i>Novo Usuário
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <!-- Main content -->
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Scripts globais -->
+    <script>
+        // Função para formatar números em formato brasileiro
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valor);
+        }
+
+        function formatarNumero(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valor);
+        }
+
+        // Sistema de Toasts Global
+        function showToast(message, type = 'success', title = '') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastConfig = {
+                success: { icon: 'fas fa-check-circle', title: title || 'Sucesso', bgClass: 'bg-success' },
+                error: { icon: 'fas fa-exclamation-circle', title: title || 'Erro', bgClass: 'bg-danger' },
+                warning: { icon: 'fas fa-exclamation-triangle', title: title || 'Atenção', bgClass: 'bg-warning' },
+                info: { icon: 'fas fa-info-circle', title: title || 'Informação', bgClass: 'bg-info' },
+                danger: { icon: 'fas fa-exclamation-circle', title: title || 'Erro', bgClass: 'bg-danger' }
+            };
+            
+            const config = toastConfig[type] || toastConfig.success;
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast toast-${type}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                    <div class="toast-header ${config.bgClass} text-white">
+                        <i class="${config.icon} me-2"></i>
+                        <strong class="me-auto">${config.title}</strong>
+                        <small>agora</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toastElement.addEventListener('hidden.bs.toast', function() { toastElement.remove(); });
+            toast.show();
+        }
+        
+        function confirmWithToast(message, onConfirm, onCancel = null) {
+            const confirmed = confirm(message);
+            if (confirmed && onConfirm) onConfirm();
+            else if (!confirmed && onCancel) onCancel();
+            return confirmed;
+        }
+
+        function fetchWithToast(url, options = {}) {
+            return fetch(url, {
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...options.headers },
+                ...options
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                showToast(data.message, data.status === 'success' ? 'success' : 'error');
+                return data;
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                showToast('Erro de comunicação com o servidor', 'error');
+                throw error;
+            });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Aplicar formatação automaticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            // Processar mensagens flash
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            showToast('{{ message|safe }}', '{{ category }}');
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            // Formatar valores monetários
+            const elementosMoeda = document.querySelectorAll('.formato-moeda');
+            elementosMoeda.forEach(elemento => {
+                const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
+                if (!isNaN(valor)) {
+                    elemento.textContent = formatarMoeda(valor);
+                }
+            });
+            
+            const elementosNumero = document.querySelectorAll('.formato-numero');
+            elementosNumero.forEach(elemento => {
+                const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
+                if (!isNaN(valor)) {
+                    elemento.textContent = formatarNumero(valor);
+                }
+            });
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

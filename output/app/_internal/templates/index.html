@@ -1,0 +1,1313 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard Financeiro</h1>
+    <!-- Toggle Button para Valores Acumulados -->
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="tipoVisualizacao" id="detalhado" value="detalhado" checked>
+        <label class="btn btn-outline-primary" for="detalhado">
+            <i class="fas fa-calendar-alt me-1"></i>Detalhado
+        </label>
+        
+        <input type="radio" class="btn-check" name="tipoVisualizacao" id="acumulado" value="acumulado">
+        <label class="btn btn-outline-success" for="acumulado">
+            <i class="fas fa-chart-line me-1"></i>Acumulado
+        </label>
+    </div>
+</div>
+
+<!-- Filtros do Dashboard -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Filtros Gerais</h5>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="aplicarFiltrosDashboard()">
+                <i class="fas fa-filter"></i> Aplicar
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparFiltrosDashboard()">
+                <i class="fas fa-times"></i> Limpar
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="filtroAnoDashboard" class="form-label">Ano</label>
+                <select class="form-select form-select-sm" id="filtroAnoDashboard">
+                    <option value="{{ ano_atual }}" selected>{{ ano_atual }}</option>
+                    {% for ano in anos_disponiveis %}
+                    <option value="{{ ano }}">{{ ano }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-9">
+                <label class="form-label">Meses (selecione um ou mais)</label>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="01" id="mes01" checked>
+                        <label class="form-check-label" for="mes01">Jan</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="02" id="mes02" checked>
+                        <label class="form-check-label" for="mes02">Fev</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="03" id="mes03" checked>
+                        <label class="form-check-label" for="mes03">Mar</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="04" id="mes04" checked>
+                        <label class="form-check-label" for="mes04">Abr</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="05" id="mes05" checked>
+                        <label class="form-check-label" for="mes05">Mai</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="06" id="mes06" checked>
+                        <label class="form-check-label" for="mes06">Jun</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="07" id="mes07" checked>
+                        <label class="form-check-label" for="mes07">Jul</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="08" id="mes08" checked>
+                        <label class="form-check-label" for="mes08">Ago</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="09" id="mes09" checked>
+                        <label class="form-check-label" for="mes09">Set</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="10" id="mes10" checked>
+                        <label class="form-check-label" for="mes10">Out</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="11" id="mes11" checked>
+                        <label class="form-check-label" for="mes11">Nov</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="12" id="mes12" checked>
+                        <label class="form-check-label" for="mes12">Dez</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cards de Indicadores -->
+<div class="row mb-4" id="cardsIndicadores">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Faturamento</h6>
+                        <h4 id="valorFaturamento">{{ indicadores.faturamento|moeda_br }}</h4>
+                        <small>
+                            <span id="variacaoFaturamento">
+                                {% set variacao = ((indicadores.faturamento - indicadores_ano_anterior.faturamento) / indicadores_ano_anterior.faturamento * 100) if indicadores_ano_anterior.faturamento > 0 else 0 %}
+                                <i class="fas fa-arrow-{{ 'up' if variacao >= 0 else 'down' }}"></i>
+                                {{ "%.1f"|format(variacao|abs) }}% vs {{ ano_anterior }}
+                            </span>
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Lucro Bruto</h6>
+                        <h4 id="valorLucroBruto">{{ indicadores.lucro_bruto|moeda_br }}</h4>
+                        <small>
+                            <span id="variacaoLucroBruto">
+                                {% set variacao = ((indicadores.lucro_bruto - indicadores_ano_anterior.lucro_bruto) / indicadores_ano_anterior.lucro_bruto * 100) if indicadores_ano_anterior.lucro_bruto > 0 else 0 %}
+                                <i class="fas fa-arrow-{{ 'up' if variacao >= 0 else 'down' }}"></i>
+                                {{ "%.1f"|format(variacao|abs) }}% vs {{ ano_anterior }}
+                            </span>
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Lucro Líquido</h6>
+                        <h4 id="valorLucroLiquido">{{ indicadores.lucro_liquido|moeda_br }}</h4>
+                        <small>
+                            <span id="variacaoLucroLiquido">
+                                {% set variacao = ((indicadores.lucro_liquido - indicadores_ano_anterior.lucro_liquido) / indicadores_ano_anterior.lucro_liquido * 100) if indicadores_ano_anterior.lucro_liquido > 0 else 0 %}
+                                <i class="fas fa-arrow-{{ 'up' if variacao >= 0 else 'down' }}"></i>
+                                {{ "%.1f"|format(variacao|abs) }}% vs {{ ano_anterior }}
+                            </span>
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-piggy-bank fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Reserva de Caixa</h6>
+                        <h4 id="valorReservaCaixa">{{ indicadores.reserva_caixa|moeda_br }}</h4>
+                        <small>
+                            <span id="variacaoReservaCaixa">
+                                {% set variacao = ((indicadores.reserva_caixa - indicadores_ano_anterior.reserva_caixa) / indicadores_ano_anterior.reserva_caixa * 100) if indicadores_ano_anterior.reserva_caixa > 0 else 0 %}
+                                <i class="fas fa-arrow-{{ 'up' if variacao >= 0 else 'down' }}"></i>
+                                {{ "%.1f"|format(variacao|abs) }}% vs {{ ano_anterior }}
+                            </span>
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-vault fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Faturamento - Histórico Mensal</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoFaturamento" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Lucro Bruto - Histórico Mensal</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoLucroBruto" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Lucro Líquido - Histórico Mensal</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoLucroLiquido" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Reserva de Caixa - Histórico Mensal</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoReservaCaixa" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Novo Gráfico de Barras por Categoria -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Análise por Categoria</h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filtrosCategorias">
+                        <i class="fas fa-filter"></i> Filtros
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="aplicarFiltrosCategorias()">
+                        <i class="fas fa-sync"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+            <div class="collapse" id="filtrosCategorias">
+                <div class="card-body border-bottom">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Categorias (selecione uma ou mais)</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for categoria in categorias_disponiveis %}
+                                <div class="form-check">
+                                    <input class="form-check-input categoria-check" type="checkbox" value="{{ categoria.id }}" id="cat{{ categoria.id }}" checked>
+                                    <label class="form-check-label" for="cat{{ categoria.id }}">
+                                        {{ categoria.nome }}
+                                        {% if categoria.eh_faturamento %}
+                                        <i class="fas fa-dollar-sign text-success"></i>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoBarrasCategorias" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo do Sistema -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-primary">{{ total_categorias }}</h3>
+                        <p class="mb-0">Categorias Ativas</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ total_contas }}</h3>
+                        <p class="mb-0">Contas Registradas</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('listar_categorias') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Gerenciar Categorias
+                    </a>
+                    <a href="{{ url_for('listar_contas') }}" class="btn btn-outline-success">
+                        <i class="fas fa-plus me-2"></i>Registrar Contas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Configuração de Cálculos</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Configure como calcular os indicadores financeiros:</p>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="fas fa-calculator me-2 text-success"></i>
+                        <strong>Lucro Bruto:</strong> Receitas - (Custos + Despesas + Impostos)
+                    </div>
+                    <div class="list-group-item">
+                        <i class="fas fa-chart-pie me-2 text-info"></i>
+                        <strong>Lucro Líquido:</strong> Lucro Bruto - Investimentos
+                    </div>
+                    <div class="list-group-item">
+                        <i class="fas fa-piggy-bank me-2 text-warning"></i>
+                        <strong>Reserva de Caixa:</strong> Lucro Líquido - Retiradas
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('configuracao_calculo') }}" class="btn btn-outline-info">
+                        <i class="fas fa-cog me-2"></i>Configurar Cálculos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Dados dos gráficos vindos do backend
+const dadosGrafico = {{ dados_grafico|tojson }};
+const dadosGraficoAnterior = {{ dados_grafico_anterior|tojson }};
+const categorias = {{ categorias_disponiveis|tojson }};
+const anoAtual = {{ ano_atual }};
+const anoAnterior = {{ ano_anterior }};
+
+// Variáveis globais para os gráficos
+let graficoFaturamento, graficoLucroBruto, graficoLucroLiquido, graficoReservaCaixa, graficoBarrasCategorias;
+let tipoVisualizacao = 'detalhado'; // Variável para controlar o tipo de visualização
+let dadosOriginais = dadosGrafico;
+let dadosOriginaisAnterior = dadosGraficoAnterior;
+
+// Função para calcular valores acumulados
+function calcularAcumulados(dados) {
+    const resultado = {
+        meses: dados.meses,
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    let acumuladoFaturamento = 0;
+    let acumuladoLucroBruto = 0;
+    let acumuladoLucroLiquido = 0;
+    let acumuladoReservaCaixa = 0;
+    
+    for (let i = 0; i < dados.faturamento.length; i++) {
+        acumuladoFaturamento += dados.faturamento[i];
+        acumuladoLucroBruto += dados.lucro_bruto[i];
+        acumuladoLucroLiquido += dados.lucro_liquido[i];
+        acumuladoReservaCaixa += dados.reserva_caixa[i];
+        
+        resultado.faturamento.push(acumuladoFaturamento);
+        resultado.lucro_bruto.push(acumuladoLucroBruto);
+        resultado.lucro_liquido.push(acumuladoLucroLiquido);
+        resultado.reserva_caixa.push(acumuladoReservaCaixa);
+    }
+    
+    return resultado;
+}
+
+// Configuração base para os gráficos com letras brancas
+const configBase = {
+    type: 'line',
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    color: '#ffffff',
+                    font: {
+                        size: 12,
+                        weight: '500'
+                    }
+                }
+            },
+            tooltip: {
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                backgroundColor: 'rgba(26, 26, 26, 0.9)',
+                borderColor: '#ff6b35',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#ffffff',
+                    font: {
+                        size: 11
+                    },
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#ffffff',
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        },
+        elements: {
+            point: {
+                radius: 4,
+                hoverRadius: 6
+            }
+        }
+    }
+};
+
+// Inicializar gráficos
+function inicializarGraficos() {
+    // Gráfico Faturamento
+    graficoFaturamento = new Chart(document.getElementById('graficoFaturamento'), {
+        ...configBase,
+        data: {
+            labels: dadosGrafico.meses,
+            datasets: [{
+                label: `Faturamento ${anoAtual}`,
+                data: dadosGrafico.faturamento,
+                borderColor: '#ff6b35',
+                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 3,
+                pointBackgroundColor: '#ff6b35',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: `Faturamento ${anoAnterior}`,
+                data: dadosGraficoAnterior.faturamento,
+                borderColor: '#95a5a6',
+                backgroundColor: 'rgba(149, 165, 166, 0.05)',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#95a5a6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1
+            }]
+        }
+    });
+
+    // Gráfico Lucro Bruto
+    graficoLucroBruto = new Chart(document.getElementById('graficoLucroBruto'), {
+        ...configBase,
+        data: {
+            labels: dadosGrafico.meses,
+            datasets: [{
+                label: `Lucro Bruto ${anoAtual}`,
+                data: dadosGrafico.lucro_bruto,
+                borderColor: '#27ae60',
+                backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 3,
+                pointBackgroundColor: '#27ae60',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: `Lucro Bruto ${anoAnterior}`,
+                data: dadosGraficoAnterior.lucro_bruto,
+                borderColor: '#95a5a6',
+                backgroundColor: 'rgba(149, 165, 166, 0.05)',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#95a5a6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1
+            }]
+        }
+    });
+
+    // Gráfico Lucro Líquido
+    graficoLucroLiquido = new Chart(document.getElementById('graficoLucroLiquido'), {
+        ...configBase,
+        data: {
+            labels: dadosGrafico.meses,
+            datasets: [{
+                label: `Lucro Líquido ${anoAtual}`,
+                data: dadosGrafico.lucro_liquido,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 3,
+                pointBackgroundColor: '#3498db',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: `Lucro Líquido ${anoAnterior}`,
+                data: dadosGraficoAnterior.lucro_liquido,
+                borderColor: '#95a5a6',
+                backgroundColor: 'rgba(149, 165, 166, 0.05)',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#95a5a6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1
+            }]
+        }
+    });
+
+    // Gráfico Reserva de Caixa
+    graficoReservaCaixa = new Chart(document.getElementById('graficoReservaCaixa'), {
+        ...configBase,
+        data: {
+            labels: dadosGrafico.meses,
+            datasets: [{
+                label: `Reserva de Caixa ${anoAtual}`,
+                data: dadosGrafico.reserva_caixa,
+                borderColor: '#f39c12',
+                backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 3,
+                pointBackgroundColor: '#f39c12',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }, {
+                label: `Reserva de Caixa ${anoAnterior}`,
+                data: dadosGraficoAnterior.reserva_caixa,
+                borderColor: '#95a5a6',
+                backgroundColor: 'rgba(149, 165, 166, 0.05)',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#95a5a6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1
+            }]
+        }
+    });
+
+    // Inicializar gráfico de barras
+    inicializarGraficoBarras();
+}
+
+function inicializarGraficoBarras() {
+    const ctx = document.getElementById('graficoBarrasCategorias');
+    
+    const cores = [
+        '#ff6b35', '#27ae60', '#3498db', '#f39c12', '#e74c3c', 
+        '#9b59b6', '#1abc9c', '#34495e', '#f1c40f', '#e67e22'
+    ];
+    
+    graficoBarrasCategorias = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categorias.map(cat => cat.nome),
+            datasets: [{
+                label: 'Valor Total',
+                data: new Array(categorias.length).fill(0),
+                backgroundColor: cores.slice(0, categorias.length),
+                borderColor: cores.slice(0, categorias.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    backgroundColor: 'rgba(26, 26, 26, 0.9)',
+                    borderColor: '#ff6b35',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#ffffff',
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 0});
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#ffffff',
+                        maxRotation: 45
+                    }
+                }
+            }
+        }
+    });
+    
+    // Carregar dados iniciais
+    aplicarFiltrosCategorias();
+}
+
+// Função para atualizar gráficos com base no tipo de visualização
+function atualizarVisualizacao() {
+    // Só executar se os dados originais existirem
+    if (!dadosOriginais || !dadosOriginaisAnterior) {
+        console.log('Dados originais não disponíveis para atualização de visualização');
+        return;
+    }
+    
+    const dadosParaUsar = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginais) : dadosOriginais;
+    const dadosParaUsarAnterior = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginaisAnterior) : dadosOriginaisAnterior;
+    
+    // Atualizar dados dos gráficos
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.update();
+}
+
+// Funções do gráfico de barras
+function aplicarFiltrosCategorias() {
+    const categoriasSelecionadas = [];
+    document.querySelectorAll('.categoria-check:checked').forEach(checkbox => {
+        categoriasSelecionadas.push(parseInt(checkbox.value));
+    });
+    
+    const ano = document.getElementById('filtroAnoDashboard').value;
+    const mesesSelecionados = [];
+    
+    for (let i = 1; i <= 12; i++) {
+        const checkbox = document.getElementById(`mes${i.toString().padStart(2, '0')}`);
+        if (checkbox && checkbox.checked) {
+            mesesSelecionados.push(i);
+        }
+    }
+    
+    if (mesesSelecionados.length === 0) {
+        for (let i = 1; i <= 12; i++) {
+            mesesSelecionados.push(i);
+        }
+    }
+    
+    fetch('/api/dados-categorias', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            categorias: categoriasSelecionadas,
+            ano: parseInt(ano),
+            meses: mesesSelecionados
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const categoriasNomes = [];
+        const valores = [];
+        const cores = [
+            '#ff6b35', '#27ae60', '#3498db', '#f39c12', '#e74c3c', 
+            '#9b59b6', '#1abc9c', '#34495e', '#f1c40f', '#e67e22'
+        ];
+        
+        data.forEach((item, index) => {
+            categoriasNomes.push(item.nome);
+            valores.push(item.valor);
+        });
+        
+        graficoBarrasCategorias.data.labels = categoriasNomes;
+        graficoBarrasCategorias.data.datasets[0].data = valores;
+        graficoBarrasCategorias.data.datasets[0].backgroundColor = cores.slice(0, data.length);
+        graficoBarrasCategorias.data.datasets[0].borderColor = cores.slice(0, data.length);
+        graficoBarrasCategorias.update();
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+    });
+}
+
+function calcularAcumuladosSimples(dados) {
+    const resultado = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    let acumFaturamento = 0;
+    let acumLucroBruto = 0;
+    let acumLucroLiquido = 0;
+    let acumReservaCaixa = 0;
+    
+    for (let i = 0; i < dados.faturamento.length; i++) {
+        acumFaturamento += dados.faturamento[i];
+        acumLucroBruto += dados.lucro_bruto[i];
+        acumLucroLiquido += dados.lucro_liquido[i];
+        acumReservaCaixa += dados.reserva_caixa[i];
+        
+        resultado.faturamento.push(acumFaturamento);
+        resultado.lucro_bruto.push(acumLucroBruto);
+        resultado.lucro_liquido.push(acumLucroLiquido);
+        resultado.reserva_caixa.push(acumReservaCaixa);
+    }
+    
+    return resultado;
+}
+
+
+function atualizarGraficosSimples(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Filtrar dados pelos meses selecionados
+    const mesesFiltrados = [];
+    const faturamentoAtual = [];
+    const faturamentoAnterior = [];
+    const lucroBrutoAtual = [];
+    const lucroBrutoAnterior = [];
+    const lucroLiquidoAtual = [];
+    const lucroLiquidoAnterior = [];
+    const reservaCaixaAtual = [];
+    const reservaCaixaAnterior = [];
+    
+    mesesSelecionados.forEach(mes => {
+        const index = mes - 1;
+        mesesFiltrados.push(nomesMeses[index]);
+        
+        faturamentoAtual.push(dadosAtual.faturamento[index] || 0);
+        faturamentoAnterior.push(dadosAnterior.faturamento[index] || 0);
+        lucroBrutoAtual.push(dadosAtual.lucro_bruto[index] || 0);
+        lucroBrutoAnterior.push(dadosAnterior.lucro_bruto[index] || 0);
+        lucroLiquidoAtual.push(dadosAtual.lucro_liquido[index] || 0);
+        lucroLiquidoAnterior.push(dadosAnterior.lucro_liquido[index] || 0);
+        reservaCaixaAtual.push(dadosAtual.reserva_caixa[index] || 0);
+        reservaCaixaAnterior.push(dadosAnterior.reserva_caixa[index] || 0);
+    });
+    
+    // Aplicar acumulado se necessário
+    let dadosParaUsarAtual = {
+        faturamento: faturamentoAtual,
+        lucro_bruto: lucroBrutoAtual,
+        lucro_liquido: lucroLiquidoAtual,
+        reserva_caixa: reservaCaixaAtual
+    };
+    
+    let dadosParaUsarAnterior = {
+        faturamento: faturamentoAnterior,
+        lucro_bruto: lucroBrutoAnterior,
+        lucro_liquido: lucroLiquidoAnterior,
+        reserva_caixa: reservaCaixaAnterior
+    };
+    
+    if (tipoVisualizacao === 'acumulado') {
+        dadosParaUsarAtual = calcularAcumuladosSimples(dadosParaUsarAtual);
+        dadosParaUsarAnterior = calcularAcumuladosSimples(dadosParaUsarAnterior);
+    }
+    
+    // Atualizar gráficos
+    graficoFaturamento.data.labels = mesesFiltrados;
+    graficoFaturamento.data.datasets[0].data = dadosParaUsarAtual.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
+    graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsarAtual.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
+    graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsarAtual.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
+    graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsarAtual.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
+    graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
+    graficoReservaCaixa.update();
+    
+    // Atualizar dados globais para o toggle
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: faturamentoAtual,
+        lucro_bruto: lucroBrutoAtual,
+        lucro_liquido: lucroLiquidoAtual,
+        reserva_caixa: reservaCaixaAtual
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: faturamentoAnterior,
+        lucro_bruto: lucroBrutoAnterior,
+        lucro_liquido: lucroLiquidoAnterior,
+        reserva_caixa: reservaCaixaAnterior
+    };
+}
+
+function atualizarGraficosComDados(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    console.log('🔍 Atualizando gráficos com dados:', { dadosAtual, dadosAnterior });
+    
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Filtrar dados pelos meses selecionados
+    const mesesFiltrados = [];
+    const dadosFiltradosAtual = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    const dadosFiltradosAnterior = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    mesesSelecionados.forEach(mes => {
+        const index = mes - 1;
+        mesesFiltrados.push(nomesMeses[index]);
+        
+        dadosFiltradosAtual.faturamento.push(dadosAtual.faturamento[index] || 0);
+        dadosFiltradosAtual.lucro_bruto.push(dadosAtual.lucro_bruto[index] || 0);
+        dadosFiltradosAtual.lucro_liquido.push(dadosAtual.lucro_liquido[index] || 0);
+        dadosFiltradosAtual.reserva_caixa.push(dadosAtual.reserva_caixa[index] || 0);
+        
+        dadosFiltradosAnterior.faturamento.push(dadosAnterior.faturamento[index] || 0);
+        dadosFiltradosAnterior.lucro_bruto.push(dadosAnterior.lucro_bruto[index] || 0);
+        dadosFiltradosAnterior.lucro_liquido.push(dadosAnterior.lucro_liquido[index] || 0);
+        dadosFiltradosAnterior.reserva_caixa.push(dadosAnterior.reserva_caixa[index] || 0);
+    });
+    
+    // Aplicar visualização (detalhado ou acumulado)
+    let dadosParaUsar = dadosFiltradosAtual;
+    let dadosParaUsarAnterior = dadosFiltradosAnterior;
+    
+    if (tipoVisualizacao === 'acumulado') {
+        dadosParaUsar = calcularAcumuladosSimples(dadosFiltradosAtual);
+        dadosParaUsarAnterior = calcularAcumuladosSimples(dadosFiltradosAnterior);
+    }
+    
+    console.log('🔍 Dados processados para gráficos:', { dadosParaUsar, dadosParaUsarAnterior });
+    
+    // Atualizar gráficos
+    graficoFaturamento.data.labels = mesesFiltrados;
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
+    graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
+    graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
+    graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
+    graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
+    graficoReservaCaixa.update();
+    
+    // Salvar dados para o toggle
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAtual.faturamento,
+        lucro_bruto: dadosFiltradosAtual.lucro_bruto,
+        lucro_liquido: dadosFiltradosAtual.lucro_liquido,
+        reserva_caixa: dadosFiltradosAtual.reserva_caixa
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAnterior.faturamento,
+        lucro_bruto: dadosFiltradosAnterior.lucro_bruto,
+        lucro_liquido: dadosFiltradosAnterior.lucro_liquido,
+        reserva_caixa: dadosFiltradosAnterior.reserva_caixa
+    };
+}
+
+// Funções de filtro do dashboard
+function aplicarFiltrosDashboard() {
+    console.log('Aplicando filtros do dashboard...');
+    
+    const ano = parseInt(document.getElementById('filtroAnoDashboard').value);
+    const anoAnterior = ano - 1;
+    const mesesSelecionados = [];
+    
+    // Coletar meses selecionados
+    for (let i = 1; i <= 12; i++) {
+        const checkbox = document.getElementById(`mes${i.toString().padStart(2, '0')}`);
+        if (checkbox && checkbox.checked) {
+            mesesSelecionados.push(i);
+        }
+    }
+    
+    if (mesesSelecionados.length === 0) {
+        showToast('Selecione pelo menos um mês', 'warning');
+        return;
+    }
+    
+    // Mostrar loading
+    showLoading();
+    
+    // Fazer duas requisições: uma para o ano selecionado e outra para o ano anterior
+    Promise.all([
+        fetch('/api/dashboard-filtrado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ano: ano,
+                meses: mesesSelecionados
+            })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return response.json();
+        }),
+        
+        fetch('/api/dashboard-filtrado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ano: anoAnterior,
+                meses: mesesSelecionados
+            })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+    ])
+    .then(([dataAtual, dataAnterior]) => {
+        console.log('Dados recebidos:', dataAtual, dataAnterior);
+        
+        // Validação simplificada
+        if (dataAtual && dataAtual.error) {
+            showToast(`Erro: ${dataAtual.error}`, 'error');
+            return;
+        }
+        
+        // Tratar ano anterior se houver erro
+        if (!dataAnterior || dataAnterior.error) {
+            dataAnterior = {
+                indicadores: { faturamento: 0, lucro_bruto: 0, lucro_liquido: 0, reserva_caixa: 0 },
+                dados_grafico: { 
+                    meses: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    faturamento: new Array(12).fill(0), 
+                    lucro_bruto: new Array(12).fill(0), 
+                    lucro_liquido: new Array(12).fill(0), 
+                    reserva_caixa: new Array(12).fill(0) 
+                }
+            };
+        }
+        
+        // Atualizar dados originais
+        dadosOriginais = dataAtual.dados_grafico;
+        dadosOriginaisAnterior = dataAnterior.dados_grafico;
+        
+        // Atualizar cards com comparação
+        atualizarCards(dataAtual.indicadores, dataAnterior.indicadores, ano, anoAnterior);
+        
+        // Atualizar gráficos de linha com comparação
+        atualizarGraficosComComparacao(dataAtual.dados_grafico, dataAnterior.dados_grafico, mesesSelecionados, ano, anoAnterior);
+        
+        // Aplicar visualização atual (detalhado ou acumulado)
+        atualizarVisualizacao();
+        
+        // Atualizar gráfico de barras
+        aplicarFiltrosCategorias();
+        
+        showToast('Filtros aplicados com sucesso!', 'success');
+    })
+    .catch(error => {
+        console.error('Erro ao aplicar filtros:', error);
+        showToast('Erro ao aplicar filtros. Verifique o console para mais detalhes.', 'error');
+    })
+    .finally(() => {
+        // Sempre remover loading
+        hideLoading();
+    });
+}
+
+
+function atualizarGraficosComComparacao(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    console.log('🔍 DEBUG atualizarGraficosComComparacao:', {
+        dadosAtual,
+        dadosAnterior,
+        mesesSelecionados
+    });
+    
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    const mesesFiltrados = [];
+    const dadosFiltradosAtual = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    const dadosFiltradosAnterior = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    mesesSelecionados.forEach(mes => {
+        const index = mes - 1;
+        mesesFiltrados.push(nomesMeses[index]);
+        
+        dadosFiltradosAtual.faturamento.push(dadosAtual.faturamento[index] || 0);
+        dadosFiltradosAtual.lucro_bruto.push(dadosAtual.lucro_bruto[index] || 0);
+        dadosFiltradosAtual.lucro_liquido.push(dadosAtual.lucro_liquido[index] || 0);
+        dadosFiltradosAtual.reserva_caixa.push(dadosAtual.reserva_caixa[index] || 0);
+        
+        dadosFiltradosAnterior.faturamento.push(dadosAnterior.faturamento[index] || 0);
+        dadosFiltradosAnterior.lucro_bruto.push(dadosAnterior.lucro_bruto[index] || 0);
+        dadosFiltradosAnterior.lucro_liquido.push(dadosAnterior.lucro_liquido[index] || 0);
+        dadosFiltradosAnterior.reserva_caixa.push(dadosAnterior.reserva_caixa[index] || 0);
+    });
+    
+    // Atualizar dados originais ANTES de aplicar visualização
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAtual.faturamento,
+        lucro_bruto: dadosFiltradosAtual.lucro_bruto,
+        lucro_liquido: dadosFiltradosAtual.lucro_liquido,
+        reserva_caixa: dadosFiltradosAtual.reserva_caixa
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAnterior.faturamento,
+        lucro_bruto: dadosFiltradosAnterior.lucro_bruto,
+        lucro_liquido: dadosFiltradosAnterior.lucro_liquido,
+        reserva_caixa: dadosFiltradosAnterior.reserva_caixa
+    };
+    
+    // Aplicar visualização (detalhado ou acumulado)
+    const dadosParaUsar = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginais) : dadosOriginais;
+    const dadosParaUsarAnterior = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginaisAnterior) : dadosOriginaisAnterior;
+    
+    // Atualizar labels dos gráficos
+    graficoFaturamento.data.labels = mesesFiltrados;
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    
+    // Atualizar dados dos gráficos com a visualização correta
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
+    graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
+    graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
+    graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
+    graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
+    graficoReservaCaixa.update();
+}
+
+
+function limparFiltrosDashboard() {
+    console.log('Limpando filtros do dashboard...');
+    
+    document.getElementById('filtroAnoDashboard').value = anoAtual;
+    
+    // Marcar todos os meses
+    for (let i = 1; i <= 12; i++) {
+        const checkbox = document.getElementById(`mes${i.toString().padStart(2, '0')}`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+    }
+    
+    // Aplicar filtros com todos os meses selecionados
+    aplicarFiltrosDashboard();
+}
+
+function atualizarCards(indicadoresAtual, indicadoresAnterior, ano, anoAnterior) {
+    // VALIDAÇÃO: Verificar se os objetos existem
+    if (!indicadoresAtual) {
+        console.error('indicadoresAtual está undefined');
+        return;
+    }
+    
+    if (!indicadoresAnterior) {
+        console.error('indicadoresAnterior está undefined');
+        indicadoresAnterior = {
+            faturamento: 0,
+            lucro_bruto: 0,
+            lucro_liquido: 0,
+            reserva_caixa: 0
+        };
+    }
+    
+    // Garantir que as propriedades existem
+    const faturamento = indicadoresAtual.faturamento || 0;
+    const lucroBruto = indicadoresAtual.lucro_bruto || 0;
+    const lucroLiquido = indicadoresAtual.lucro_liquido || 0;
+    const reservaCaixa = indicadoresAtual.reserva_caixa || 0;
+    
+    // Atualizar valores nos cards
+    document.getElementById('valorFaturamento').textContent = `R$ ${faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorLucroBruto').textContent = `R$ ${lucroBruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorLucroLiquido').textContent = `R$ ${lucroLiquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorReservaCaixa').textContent = `R$ ${reservaCaixa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    
+    // Calcular e atualizar variações
+    atualizarVariacao('variacaoFaturamento', faturamento, indicadoresAnterior.faturamento || 0, anoAnterior);
+    atualizarVariacao('variacaoLucroBruto', lucroBruto, indicadoresAnterior.lucro_bruto || 0, anoAnterior);
+    atualizarVariacao('variacaoLucroLiquido', lucroLiquido, indicadoresAnterior.lucro_liquido || 0, anoAnterior);
+    atualizarVariacao('variacaoReservaCaixa', reservaCaixa, indicadoresAnterior.reserva_caixa || 0, anoAnterior);
+}
+
+
+function atualizarVariacao(elementId, valorAtual, valorAnterior, anoAnterior) {
+    const elemento = document.getElementById(elementId);
+    
+    let variacao = 0;
+    if (valorAnterior > 0) {
+        variacao = ((valorAtual - valorAnterior) / valorAnterior) * 100;
+    } else if (valorAtual > 0) {
+        variacao = 100;
+    }
+    
+    const icone = variacao >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+    const cor = variacao >= 0 ? 'text-success' : 'text-danger';
+    
+    elemento.innerHTML = `
+        <i class="fas ${icone} ${cor}"></i>
+        ${Math.abs(variacao).toFixed(1)}% vs ${anoAnterior}
+    `;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 Iniciando carregamento do dashboard...');
+    
+    // Mostrar loading
+    showLoading();
+    
+    try {
+        // Calcular dados acumulados iniciais
+        dadosAcumulados = calcularAcumulados(dadosOriginais);
+        dadosAcumuladosAnterior = calcularAcumulados(dadosOriginaisAnterior);
+        
+        // Criar gráficos
+        inicializarGraficos();
+        
+        // Toggle entre mensal e acumulado
+        document.querySelectorAll('input[name="tipoVisualizacao"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                tipoVisualizacao = this.value;
+                atualizarVisualizacao();
+            });
+        });
+        
+        console.log('✅ Dashboard carregado com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dashboard:', error);
+    } finally {
+        // SEMPRE remover o loading, mesmo se houver erro
+        setTimeout(() => {
+            hideLoading();
+        }, 1000); // Aguardar 1 segundo para garantir que tudo carregou
+    }
+});
+
+function showLoading() {
+    // Remover loading existente se houver
+    const existingOverlay = document.getElementById('loading-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    // Criar novo loading
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+             background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="text-primary">Carregando Dashboard...</h5>
+                <p class="text-muted mb-0">Aguarde enquanto os dados são processados</p>
+            </div>
+        </div>
+    `);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        // Adicionar animação de fade out
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease-out';
+        
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
+}
+</script>
+{% endblock %}

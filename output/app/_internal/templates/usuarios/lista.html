@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gerenciar Usuários</h2>
+        <a href="{{ url_for('novo_usuario') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Novo Usuário
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Usuários do Sistema</h5>
+        </div>
+        <div class="card-body">
+            {% if usuarios %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Nome Completo</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Data Cadastro</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr class="{% if not usuario.ativo %}registro-inativo{% endif %}">
+                            <td>
+                                <strong>{{ usuario.username }}</strong>
+                                {% if usuario.is_admin %}
+                                <i class="fas fa-crown text-warning ms-1" title="Administrador"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.nome_completo }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>
+                                {% if usuario.is_admin %}
+                                <span class="badge bg-warning">Admin</span>
+                                {% else %}
+                                <span class="badge bg-info">Usuário</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.data_cadastro.strftime('%d/%m/%Y %H:%M') if usuario.data_cadastro else '-' }}</td>
+                            <td>
+                                <span class="badge {% if usuario.ativo %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if usuario.ativo %}Ativo{% else %}Inativo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <!-- LINK SIMPLES SEM AJAX -->
+                                <a href="{{ url_for('editar_usuario', id=usuario.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                Nenhum usuário cadastrado.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Informações sobre permissões -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="mb-0">Informações sobre Permissões</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-crown text-warning me-2"></i>Administradores</h6>
+                <ul class="text-muted">
+                    <li>Acesso total ao sistema</li>
+                    <li>Podem gerenciar usuários</li>
+                    <li>Podem criar novos usuários</li>
+                    <li>Podem ativar/desativar usuários</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-user text-info me-2"></i>Usuários Comuns</h6>
+                <ul class="text-muted">
+                    <li>Acesso às funcionalidades principais</li>
+                    <li>Podem gerenciar categorias e contas</li>
+                    <li>Podem visualizar relatórios</li>
+                    <li>Não podem gerenciar outros usuários</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editarUsuario(id) {
+    // Buscar dados do usuário
+    fetch(`/usuarios/editar/${id}`)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('editUsuarioId').value = data.id;
+            document.getElementById('editNomeCompleto').value = data.nome_completo;
+            document.getElementById('editUsername').value = data.username;
+            document.getElementById('editEmail').value = data.email;
+            document.getElementById('editIsAdmin').checked = data.is_admin;
+            document.getElementById('editAtivo').checked = data.ativo;
+            document.getElementById('editNovaSenha').value = '';
+            
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar usuário:', error);
+            mostrarAlerta('Erro ao carregar dados do usuário', 'danger');
+        });
+}
+
+function toggleUsuario(id, ativo) {
+    const acao = ativo ? 'desativar' : 'ativar';
+    if (confirm(`Tem certeza que deseja ${acao} este usuário?`)) {
+        fetch(`/usuarios/toggle/${id}`, {
+            method: 'POST'
+        })
+        .then(response => response.text())
+        .then(result => {
+            if (result.status === 'success') {
+                mostrarAlerta(result.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                mostrarAlerta('Erro: ' + result.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrarAlerta('Erro ao alterar usuário', 'danger');
+        });
+    }
+}
+
+function excluirUsuario(id) {
+    if (confirm('Tem certeza que deseja EXCLUIR este usuário?\n\nEsta ação não pode ser desfeita!')) {
+        fetch(`/usuarios/excluir/${id}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                // Remover linha da tabela
+                const linha = document.querySelector(`tr[data-usuario-id="${id}"]`);
+                if (linha) {
+                    linha.remove();
+                }
+                
+                // Atualizar contador
+                const contador = document.querySelector('.badge.bg-light');
+                const linhasRestantes = document.querySelectorAll('tbody tr').length;
+                contador.textContent = `${linhasRestantes} usuários`;
+                
+                mostrarAlerta(result.message, 'success');
+            } else {
+                mostrarAlerta('Erro: ' + result.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            mostrarAlerta('Erro ao excluir usuário', 'danger');
+        });
+    }
+}
+
+// Submissão do formulário de edição
+document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const id = document.getElementById('editUsuarioId').value;
+    const dados = {
+        nome_completo: document.getElementById('editNomeCompleto').value,
+        username: document.getElementById('editUsername').value,
+        email: document.getElementById('editEmail').value,
+        is_admin: document.getElementById('editIsAdmin').checked,
+        ativo: document.getElementById('editAtivo').checked,
+        nova_senha: document.getElementById('editNovaSenha').value
+    };
+    
+    fetch(`/usuarios/editar/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
+            modal.hide();
+            
+            mostrarAlerta(result.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Erro: ' + result.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        mostrarAlerta('Erro ao atualizar usuário', 'danger');
+    });
+});
+
+function mostrarAlerta(mensagem, tipo) {
+    // Remover alertas existentes
+    const alertasExistentes = document.querySelectorAll('.alert-temp');
+    alertasExistentes.forEach(alerta => alerta.remove());
+    
+    // Criar novo alerta
+    const alerta = document.createElement('div');
+    alerta.className = `alert alert-${tipo} alert-dismissible fade show alert-temp`;
+    alerta.innerHTML = `
+        ${mensagem}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Inserir no início do main-content
+    const mainContent = document.querySelector('.main-content');
+    mainContent.insertBefore(alerta, mainContent.firstChild);
+    
+    // Auto-remover após 5 segundos
+    setTimeout(() => {
+        if (alerta.parentNode) {
+            alerta.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}
