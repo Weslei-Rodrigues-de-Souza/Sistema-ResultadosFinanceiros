@@ -214,5 +214,28 @@ function exportarBanco() {
         window.location.href = `/empresas/exportar/${empresaEditandoId}`;
     }
 }
+
+function salvarEdicaoEmpresa() {
+    const form = document.getElementById('formEditarEmpresa');
+    const formData = new FormData(form);
+    
+    fetch(`/empresas/editar/${empresaEditandoId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast('Erro ao salvar alterações', 'error');
+    });
+}
 </script>
 {% endblock %}

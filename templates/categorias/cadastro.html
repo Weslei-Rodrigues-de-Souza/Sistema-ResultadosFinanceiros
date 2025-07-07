@@ -9,6 +9,13 @@
         </button>
     </div>
 
+    <!-- Alerta informativo -->
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Importante:</strong> Categorias que possuem contas vinculadas não podem ser excluídas, apenas inativadas. 
+        Para reativar uma categoria, use o botão de toggle ou o botão "Reativar".
+    </div>
+
     <!-- Categorias Ativas -->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -49,16 +56,37 @@
                                 <label class="toggle-switch">
                                     <input type="checkbox" checked 
                                            onchange="toggleCategoria({{ categoria.id }}, this.checked)"
-                                           {% if not categoria.pode_ser_excluida() %}disabled{% endif %}>
+                                           {% if not categoria.pode_ser_excluida() %}
+                                           title="Esta categoria possui contas vinculadas e só pode ser inativada"
+                                           {% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span class="badge bg-success badge-status ms-1">Ativa</span>
+                                {% if not categoria.pode_ser_excluida() %}
+                                <br><small class="text-warning">Possui contas vinculadas</small>
+                                {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-outline-primary btn-sm" 
-                                        onclick="editarCategoria({{ categoria.id }})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="editarCategoria({{ categoria.id }})"
+                                            title="Editar categoria">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if categoria.pode_ser_excluida() %}
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            onclick="excluirCategoria({{ categoria.id }})"
+                                            title="Excluir categoria">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-outline-warning btn-sm" 
+                                            onclick="inativarCategoria({{ categoria.id }})"
+                                            title="Inativar categoria">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -108,7 +136,8 @@
                             </td>
                             <td>
                                 <button class="btn btn-outline-success btn-sm" 
-                                        onclick="reativarCategoria({{ categoria.id }})">
+                                        onclick="reativarCategoria({{ categoria.id }})"
+                                        title="Reativar categoria">
                                     <i class="fas fa-undo"></i> Reativar
                                 </button>
                             </td>
@@ -152,58 +181,221 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Editar Categoria -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarCategoria">
+                    <input type="hidden" id="editCategoriaId">
+                    <div class="mb-3">
+                        <label for="editNome" class="form-label">Nome da Categoria</label>
+                        <input type="text" class="form-control" id="editNome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="editDescricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="editEhFaturamento">
+                        <label class="form-check-label" for="editEhFaturamento">
+                            Esta é a categoria de faturamento
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicaoCategoria()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+let categoriaEditandoId = null;
+
 function toggleCategoria(categoriaId, ativo) {
+    console.log('Toggle categoria:', categoriaId, 'Ativo:', ativo);
+    
     const url = ativo ? `/categorias/reativar/${categoriaId}` : `/categorias/excluir/${categoriaId}`;
-    const method = 'POST';
     
     fetch(url, {
-        method: method,
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Resposta:', data);
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message, 'error');
+            setTimeout(() => location.reload(), 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Erro na requisição:', error);
+        showToast('Erro de comunicação com o servidor', 'error');
+        setTimeout(() => location.reload(), 1500);
+    });
+}
+
+function excluirCategoria(categoriaId) {
+    confirmWithToast(
+        'Tem certeza que deseja excluir esta categoria?',
+        function() {
+            fetch(`/categorias/excluir/${categoriaId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showToast('Erro de comunicação com o servidor', 'error');
+            });
+        }
+    );
+}
+
+function inativarCategoria(categoriaId) {
+    confirmWithToast(
+        'Tem certeza que deseja inativar esta categoria?',
+        function() {
+            fetch(`/categorias/excluir/${categoriaId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(data.message, 'warning');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showToast('Erro de comunicação com o servidor', 'error');
+            });
+        }
+    );
+}
+
+function reativarCategoria(categoriaId) {
+    confirmWithToast(
+        'Deseja reativar esta categoria?',
+        function() {
+            fetch(`/categorias/reativar/${categoriaId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showToast('Erro de comunicação com o servidor', 'error');
+            });
+        }
+    );
+}
+
+function editarCategoria(categoriaId) {
+    categoriaEditandoId = categoriaId;
+    
+    fetch(`/categorias/editar/${categoriaId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => response.json())
     .then(data => {
+        document.getElementById('editCategoriaId').value = data.id;
+        document.getElementById('editNome').value = data.nome;
+        document.getElementById('editDescricao').value = data.descricao || '';
+        document.getElementById('editEhFaturamento').checked = data.eh_faturamento;
+        
+        var modal = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast('Erro ao carregar dados da categoria', 'error');
+    });
+}
+
+function salvarEdicaoCategoria() {
+    const dados = {
+        nome: document.getElementById('editNome').value,
+        descricao: document.getElementById('editDescricao').value,
+        eh_faturamento: document.getElementById('editEhFaturamento').checked
+    };
+    
+    fetch(`/categorias/editar/${categoriaEditandoId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
         if (data.status === 'success') {
-            location.reload();
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
         } else {
-            alert('Erro: ' + data.message);
-            location.reload();
+            showToast(data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Erro:', error);
-        location.reload();
+        showToast('Erro ao salvar alterações', 'error');
     });
-}
-
-function reativarCategoria(categoriaId) {
-    if (confirm('Deseja reativar esta categoria?')) {
-        fetch(`/categorias/reativar/${categoriaId}`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            location.reload();
-        });
-    }
-}
-
-function editarCategoria(categoriaId) {
-    // Implementar edição
-    alert('Função de edição será implementada');
 }
 </script>
 {% endblock %}
+

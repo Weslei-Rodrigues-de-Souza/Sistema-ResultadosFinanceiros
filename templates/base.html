@@ -6,6 +6,7 @@
     <title>{% block title %}Elevalucro - Resultados Financeiros{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
     :root {
         --primary-color: #ff6b35;
@@ -173,33 +174,6 @@
         border-radius: 0 0 15px 15px;
     }
 
-    .card-footer {
-        background-color: var(--card-bg);
-        border-top: 1px solid var(--border-color);
-        border-radius: 0 0 15px 15px;
-    }
-
-    /* Cards de indicadores com gradientes */
-    .card.bg-primary {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%) !important;
-        border: none;
-    }
-
-    .card.bg-success {
-        background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%) !important;
-        border: none;
-    }
-
-    .card.bg-info {
-        background: linear-gradient(135deg, var(--info-color) 0%, #5dade2 100%) !important;
-        border: none;
-    }
-
-    .card.bg-warning {
-        background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%) !important;
-        border: none;
-    }
-
     /* Botões */
     .btn {
         border-radius: 10px;
@@ -230,18 +204,8 @@
         color: white;
     }
 
-    .btn-secondary:hover {
-        background: linear-gradient(135deg, #7f8c8d 0%, var(--medium-gray) 100%);
-        color: white;
-    }
-
     .btn-success {
         background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: linear-gradient(135deg, #2ecc71 0%, var(--success-color) 100%);
         color: white;
     }
 
@@ -250,28 +214,13 @@
         color: white;
     }
 
-    .btn-info:hover {
-        background: linear-gradient(135deg, #5dade2 0%, var(--info-color) 100%);
-        color: white;
-    }
-
     .btn-warning {
         background: linear-gradient(135deg, var(--warning-color) 0%, var(--accent-color) 100%);
         color: white;
     }
 
-    .btn-warning:hover {
-        background: linear-gradient(135deg, var(--accent-color) 0%, var(--warning-color) 100%);
-        color: white;
-    }
-
     .btn-danger {
         background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%);
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: linear-gradient(135deg, #c0392b 0%, var(--danger-color) 100%);
         color: white;
     }
 
@@ -293,20 +242,10 @@
         background: transparent;
     }
 
-    .btn-outline-secondary:hover {
-        background: var(--medium-gray);
-        color: white;
-    }
-
     .btn-outline-success {
         border: 2px solid var(--success-color);
         color: var(--success-color);
         background: transparent;
-    }
-
-    .btn-outline-success:hover {
-        background: var(--success-color);
-        color: white;
     }
 
     .btn-outline-info {
@@ -315,20 +254,10 @@
         background: transparent;
     }
 
-    .btn-outline-info:hover {
-        background: var(--info-color);
-        color: white;
-    }
-
     .btn-outline-warning {
         border: 2px solid var(--warning-color);
         color: var(--warning-color);
         background: transparent;
-    }
-
-    .btn-outline-warning:hover {
-        background: var(--warning-color);
-        color: white;
     }
 
     .btn-outline-danger {
@@ -337,18 +266,9 @@
         background: transparent;
     }
 
-    .btn-outline-danger:hover {
-        background: var(--danger-color);
-        color: white;
-    }
-
     .btn-sm {
         padding: 8px 15px;
         font-size: 0.875rem;
-    }
-
-    .btn-close-white {
-        filter: invert(1) grayscale(100%) brightness(200%);
     }
 
     /* Alertas */
@@ -384,12 +304,6 @@
         border-left-color: var(--danger-color);
     }
 
-    .alert-light {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--text-light);
-        border-left-color: var(--medium-gray);
-    }
-
     /* Tabelas */
     .table {
         border-radius: 10px;
@@ -408,16 +322,6 @@
         vertical-align: middle;
     }
 
-    .table-dark {
-        background: var(--sidebar-bg);
-        color: white;
-    }
-
-    .table-dark th,
-    .table-dark td {
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
     .table-striped tbody tr:nth-of-type(odd) {
         background-color: rgba(255, 255, 255, 0.02);
     }
@@ -425,11 +329,6 @@
     .table-hover tbody tr:hover {
         background-color: rgba(255, 107, 53, 0.1);
         color: var(--text-dark);
-    }
-
-    .table-responsive {
-        border-radius: 10px;
-        overflow: hidden;
     }
 
     /* Badges */
@@ -455,29 +354,14 @@
         color: white;
     }
 
-    .badge.bg-info {
-        background: linear-gradient(135deg, var(--info-color) 0%, #5dade2 100%) !important;
+    .badge.bg-danger {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%) !important;
         color: white;
     }
 
     .badge.bg-secondary {
         background: linear-gradient(135deg, var(--medium-gray) 0%, #7f8c8d 100%) !important;
         color: white;
-    }
-
-    .badge.bg-danger {
-        background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%) !important;
-        color: white;
-    }
-
-    .badge.bg-light {
-        background: rgba(255, 255, 255, 0.1) !important;
-        color: var(--text-dark);
-    }
-
-    .badge.bg-dark {
-        background: var(--card-bg) !important;
-        color: var(--text-dark);
     }
 
     /* Modais */
@@ -505,10 +389,6 @@
         background-color: var(--card-bg);
         border-top: 1px solid var(--border-color);
         border-radius: 0 0 15px 15px;
-    }
-
-    .modal-backdrop {
-        background-color: rgba(0, 0, 0, 0.8);
     }
 
     /* Forms */
@@ -540,10 +420,6 @@
         margin-bottom: 8px;
     }
 
-    .form-text {
-        color: var(--text-muted);
-    }
-
     .form-check-input {
         background-color: var(--card-bg);
         border: 2px solid var(--border-color);
@@ -554,202 +430,11 @@
         border-color: var(--accent-color);
     }
 
-    .form-check-input:focus {
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.25);
-    }
-
     .form-check-label {
         color: var(--text-dark);
     }
 
-    .input-group-text {
-        background-color: var(--card-bg);
-        border: 2px solid var(--border-color);
-        color: var(--text-dark);
-        border-radius: 10px 0 0 10px;
-    }
-
-    /* Valores monetários */
-    .valor-positivo {
-        color: var(--success-color);
-        font-weight: bold;
-        font-family: 'Courier New', monospace;
-    }
-
-    .valor-negativo {
-        color: var(--danger-color);
-        font-weight: bold;
-        font-family: 'Courier New', monospace;
-    }
-
-    .formato-moeda,
-    .formato-numero {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-    }
-
-    /* Headers */
-    .h1, .h2, .h3, .h4, .h5, .h6,
-    h1, h2, h3, h4, h5, h6 {
-        color: var(--text-dark);
-        font-weight: 600;
-    }
-
-    /* Borders */
-    .border-bottom {
-        border-bottom: 2px solid var(--border-color) !important;
-    }
-
-    .border-top {
-        border-top: 1px solid var(--border-color) !important;
-    }
-
-    /* Text utilities */
-    .text-muted {
-        color: var(--text-muted) !important;
-    }
-
-    .text-white {
-        color: white !important;
-    }
-
-    .text-primary {
-        color: var(--primary-color) !important;
-    }
-
-    .text-success {
-        color: var(--success-color) !important;
-    }
-
-    .text-info {
-        color: var(--info-color) !important;
-    }
-
-    .text-warning {
-        color: var(--warning-color) !important;
-    }
-
-    .text-danger {
-        color: var(--danger-color) !important;
-    }
-
-    /* List groups */
-    .list-group-item {
-        background-color: var(--card-bg);
-        border: 1px solid var(--border-color);
-        color: var(--text-dark);
-    }
-
-    .list-group-item:hover {
-        background-color: rgba(255, 107, 53, 0.1);
-    }
-
-    .list-group-item-action:hover {
-        background-color: rgba(255, 107, 53, 0.1);
-        color: var(--text-dark);
-    }
-
-    .list-group-flush .list-group-item {
-        border-left: 0;
-        border-right: 0;
-    }
-
-    /* Dropdown */
-    .dropdown-menu {
-        background-color: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        box-shadow: var(--card-shadow);
-    }
-
-    .dropdown-item {
-        color: var(--text-dark);
-    }
-
-    .dropdown-item:hover {
-        background-color: rgba(255, 107, 53, 0.1);
-        color: var(--text-dark);
-    }
-
-    /* Scrollbar personalizada */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: var(--card-bg);
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--accent-color);
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: #ff8c42;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .sidebar.show {
-            transform: translateX(0);
-        }
-        
-        .main-content {
-            margin-left: 0;
-            padding: 20px 15px;
-        }
-
-        .card {
-            margin-bottom: 15px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-        }
-
-        .table-responsive {
-            font-size: 0.875rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .main-content {
-            padding: 15px 10px;
-        }
-
-        .card-body {
-            padding: 15px;
-        }
-
-        .btn {
-            padding: 8px 15px;
-            font-size: 0.875rem;
-        }
-    }
-
-    .sidebar-heading {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        color: #95a5a6 !important;
-        border-bottom: 1px solid #333333;
-        padding-bottom: 8px;
-        margin-bottom: 8px;
-    }
-
-    .sidebar .nav-item h6 {
-        margin: 0;
-        padding: 8px 20px;
-    }
-
+    /* Toggle switches */
     .toggle-switch {
         position: relative;
         display: inline-block;
@@ -802,68 +487,222 @@
 
     .registro-inativo {
         opacity: 0.6;
-        background-color: #f8f9fa;
+        background-color: rgba(248, 249, 250, 0.1);
     }
 
     .badge-status {
         font-size: 0.75em;
     }
 
-</style>
+    /* Toasts */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+    }
+    
+    .toast {
+        min-width: 300px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        background-color: var(--card-bg);
+        color: var(--text-dark);
+    }
+    
+    .toast-success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast-error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-warning {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .toast-info {
+        border-left: 4px solid #17a2b8;
+    }
+
+    /* Dropdown */
+    .dropdown-menu {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .dropdown-item {
+        color: var(--text-dark);
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(255, 107, 53, 0.1);
+        color: var(--text-dark);
+    }
+
+    /* List groups */
+    .list-group-item {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-dark);
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(255, 107, 53, 0.1);
+    }
+
+    /* Headers */
+    .h1, .h2, .h3, .h4, .h5, .h6,
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-dark);
+        font-weight: 600;
+    }
+
+    /* Text utilities */
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .text-white {
+        color: white !important;
+    }
+
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+
+    .text-success {
+        color: var(--success-color) !important;
+    }
+
+    .text-info {
+        color: var(--info-color) !important;
+    }
+
+    .text-warning {
+        color: var(--warning-color) !important;
+    }
+
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+
+    .sidebar-heading {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        color: #95a5a6 !important;
+        border-bottom: 1px solid #333333;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0;
+            padding: 20px 15px;
+        }
+
+        .toast-container {
+            right: 10px;
+            left: 10px;
+            max-width: none;
+        }
+        
+        .toast {
+            min-width: auto;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .main-content {
+            padding: 15px 10px;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            font-size: 0.875rem;
+        }
+    }
+    </style>
 
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-            <img src="{{ url_for('static', filename='images/logo_elevalucro-02.jpg') }}" alt="ELEVALUCRO" class="logo-elevalucro">
-        </a>
-        <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse">
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-building"></i>
-                    <span id="empresa-selecionada">
-                        {% if 'empresa_selecionada' in session %}
-                            {{ empresa_selecionada.nome }}
-                        {% else %}
-                            Selecione uma empresa
-                        {% endif %}
-                    </span>
-                </a>
-                <ul class="dropdown-menu">
-                    {% for empresa in empresas %}
-                    <li><a class="dropdown-item" href="#" onclick="selecionarEmpresa({{ empresa.id }})">{{ empresa.nome }}</a></li>
-                    {% endfor %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalEmpresas">
-                        <i class="fas fa-plus"></i> Gerenciar empresas
-                    </a></li>
-                </ul>
-            </div>
-            <ul class="navbar-nav ms-auto">
-                {% if current_user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user me-1"></i>{{ current_user.nome_completo }}
+    <!-- Container para toasts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='images/logo_elevalucro-02.jpg') }}" alt="ELEVALUCRO" class="logo-elevalucro">
+            </a>
+            <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-building"></i>
+                        <span id="empresa-selecionada">
+                            {% if empresa_selecionada %}
+                                {{ empresa_selecionada.nome }}
+                            {% else %}
+                                Selecione uma empresa
+                            {% endif %}
+                        </span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Perfil</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('empresas') }}">
+                            <i class="fas fa-cog"></i> Gerenciar empresas
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('empresas') }}">
+                            <i class="fas fa-exchange-alt"></i> Trocar empresa
+                        </a></li>
                     </ul>
-                </li>
-                {% endif %}
-            </ul>
+                </div>
+
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.nome_completo }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
+    </nav>
 
-    </div>
-</nav>
-
+    <!-- Container principal -->
     <div class="main-container">
+        <!-- Sidebar -->
         <nav class="sidebar">
             <ul class="nav flex-column">
                 <li class="nav-item">
@@ -872,7 +711,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('empresas') }}">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'empresas' }}" href="{{ url_for('empresas') }}">
                         <i class="fas fa-building"></i> Empresas
                     </a>
                 </li>
@@ -892,7 +731,7 @@
                     </a>
                 </li>
                 
-                <!-- Seção Administrativa (apenas para admins) -->
+                <!-- Seção Administrativa -->
                 {% if current_user.is_admin %}
                 <li class="nav-item mt-3">
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
@@ -913,6 +752,7 @@
             </ul>
         </nav>
 
+        <!-- Main content -->
         <main class="main-content">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -929,45 +769,125 @@
         </main>
     </div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Scripts globais -->
+    <script>
+        // Função para formatar números em formato brasileiro
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valor);
+        }
+
+        function formatarNumero(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valor);
+        }
+
+        // Sistema de Toasts Global
+        function showToast(message, type = 'success', title = '') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastConfig = {
+                success: { icon: 'fas fa-check-circle', title: title || 'Sucesso', bgClass: 'bg-success' },
+                error: { icon: 'fas fa-exclamation-circle', title: title || 'Erro', bgClass: 'bg-danger' },
+                warning: { icon: 'fas fa-exclamation-triangle', title: title || 'Atenção', bgClass: 'bg-warning' },
+                info: { icon: 'fas fa-info-circle', title: title || 'Informação', bgClass: 'bg-info' },
+                danger: { icon: 'fas fa-exclamation-circle', title: title || 'Erro', bgClass: 'bg-danger' }
+            };
+            
+            const config = toastConfig[type] || toastConfig.success;
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast toast-${type}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                    <div class="toast-header ${config.bgClass} text-white">
+                        <i class="${config.icon} me-2"></i>
+                        <strong class="me-auto">${config.title}</strong>
+                        <small>agora</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toastElement.addEventListener('hidden.bs.toast', function() { toastElement.remove(); });
+            toast.show();
+        }
+        
+        function confirmWithToast(message, onConfirm, onCancel = null) {
+            const confirmed = confirm(message);
+            if (confirmed && onConfirm) onConfirm();
+            else if (!confirmed && onCancel) onCancel();
+            return confirmed;
+        }
+
+        function fetchWithToast(url, options = {}) {
+            return fetch(url, {
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...options.headers },
+                ...options
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                showToast(data.message, data.status === 'success' ? 'success' : 'error');
+                return data;
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                showToast('Erro de comunicação com o servidor', 'error');
+                throw error;
+            });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Aplicar formatação automaticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            // Processar mensagens flash
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            showToast('{{ message|safe }}', '{{ category }}');
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            // Formatar valores monetários
+            const elementosMoeda = document.querySelectorAll('.formato-moeda');
+            elementosMoeda.forEach(elemento => {
+                const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
+                if (!isNaN(valor)) {
+                    elemento.textContent = formatarMoeda(valor);
+                }
+            });
+            
+            const elementosNumero = document.querySelectorAll('.formato-numero');
+            elementosNumero.forEach(elemento => {
+                const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
+                if (!isNaN(valor)) {
+                    elemento.textContent = formatarNumero(valor);
+                }
+            });
+        });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
-<script>
-// Função para formatar números em formato brasileiro
-function formatarMoeda(valor) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(valor);
-}
-
-function formatarNumero(valor) {
-    return new Intl.NumberFormat('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(valor);
-}
-
-// Aplicar formatação automaticamente em elementos com classe 'formato-moeda'
-document.addEventListener('DOMContentLoaded', function() {
-    const elementosMoeda = document.querySelectorAll('.formato-moeda');
-    elementosMoeda.forEach(elemento => {
-        const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
-        if (!isNaN(valor)) {
-            elemento.textContent = formatarMoeda(valor);
-        }
-    });
-    
-    const elementosNumero = document.querySelectorAll('.formato-numero');
-    elementosNumero.forEach(elemento => {
-        const valor = parseFloat(elemento.textContent.replace(/[^\d.-]/g, ''));
-        if (!isNaN(valor)) {
-            elemento.textContent = formatarNumero(valor);
-        }
-    });
-});
-</script>
 </html>

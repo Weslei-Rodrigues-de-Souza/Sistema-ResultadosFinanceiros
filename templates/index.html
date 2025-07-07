@@ -3,6 +3,18 @@
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Dashboard Financeiro</h1>
+    <!-- Toggle Button para Valores Acumulados -->
+    <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="tipoVisualizacao" id="detalhado" value="detalhado" checked>
+        <label class="btn btn-outline-primary" for="detalhado">
+            <i class="fas fa-calendar-alt me-1"></i>Detalhado
+        </label>
+        
+        <input type="radio" class="btn-check" name="tipoVisualizacao" id="acumulado" value="acumulado">
+        <label class="btn btn-outline-success" for="acumulado">
+            <i class="fas fa-chart-line me-1"></i>Acumulado
+        </label>
+    </div>
 </div>
 
 <!-- Filtros do Dashboard -->
@@ -349,6 +361,39 @@ const anoAnterior = {{ ano_anterior }};
 
 // Variáveis globais para os gráficos
 let graficoFaturamento, graficoLucroBruto, graficoLucroLiquido, graficoReservaCaixa, graficoBarrasCategorias;
+let tipoVisualizacao = 'detalhado'; // Variável para controlar o tipo de visualização
+let dadosOriginais = dadosGrafico;
+let dadosOriginaisAnterior = dadosGraficoAnterior;
+
+// Função para calcular valores acumulados
+function calcularAcumulados(dados) {
+    const resultado = {
+        meses: dados.meses,
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    let acumuladoFaturamento = 0;
+    let acumuladoLucroBruto = 0;
+    let acumuladoLucroLiquido = 0;
+    let acumuladoReservaCaixa = 0;
+    
+    for (let i = 0; i < dados.faturamento.length; i++) {
+        acumuladoFaturamento += dados.faturamento[i];
+        acumuladoLucroBruto += dados.lucro_bruto[i];
+        acumuladoLucroLiquido += dados.lucro_liquido[i];
+        acumuladoReservaCaixa += dados.reserva_caixa[i];
+        
+        resultado.faturamento.push(acumuladoFaturamento);
+        resultado.lucro_bruto.push(acumuladoLucroBruto);
+        resultado.lucro_liquido.push(acumuladoLucroLiquido);
+        resultado.reserva_caixa.push(acumuladoReservaCaixa);
+    }
+    
+    return resultado;
+}
 
 // Configuração base para os gráficos com letras brancas
 const configBase = {
@@ -616,6 +661,35 @@ function inicializarGraficoBarras() {
     aplicarFiltrosCategorias();
 }
 
+// Função para atualizar gráficos com base no tipo de visualização
+function atualizarVisualizacao() {
+    // Só executar se os dados originais existirem
+    if (!dadosOriginais || !dadosOriginaisAnterior) {
+        console.log('Dados originais não disponíveis para atualização de visualização');
+        return;
+    }
+    
+    const dadosParaUsar = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginais) : dadosOriginais;
+    const dadosParaUsarAnterior = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginaisAnterior) : dadosOriginaisAnterior;
+    
+    // Atualizar dados dos gráficos
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.update();
+}
+
 // Funções do gráfico de barras
 function aplicarFiltrosCategorias() {
     const categoriasSelecionadas = [];
@@ -675,7 +749,224 @@ function aplicarFiltrosCategorias() {
     });
 }
 
-// Funções de filtro do dashboard (versão simplificada que funcionava)
+function calcularAcumuladosSimples(dados) {
+    const resultado = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    let acumFaturamento = 0;
+    let acumLucroBruto = 0;
+    let acumLucroLiquido = 0;
+    let acumReservaCaixa = 0;
+    
+    for (let i = 0; i < dados.faturamento.length; i++) {
+        acumFaturamento += dados.faturamento[i];
+        acumLucroBruto += dados.lucro_bruto[i];
+        acumLucroLiquido += dados.lucro_liquido[i];
+        acumReservaCaixa += dados.reserva_caixa[i];
+        
+        resultado.faturamento.push(acumFaturamento);
+        resultado.lucro_bruto.push(acumLucroBruto);
+        resultado.lucro_liquido.push(acumLucroLiquido);
+        resultado.reserva_caixa.push(acumReservaCaixa);
+    }
+    
+    return resultado;
+}
+
+
+function atualizarGraficosSimples(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Filtrar dados pelos meses selecionados
+    const mesesFiltrados = [];
+    const faturamentoAtual = [];
+    const faturamentoAnterior = [];
+    const lucroBrutoAtual = [];
+    const lucroBrutoAnterior = [];
+    const lucroLiquidoAtual = [];
+    const lucroLiquidoAnterior = [];
+    const reservaCaixaAtual = [];
+    const reservaCaixaAnterior = [];
+    
+    mesesSelecionados.forEach(mes => {
+        const index = mes - 1;
+        mesesFiltrados.push(nomesMeses[index]);
+        
+        faturamentoAtual.push(dadosAtual.faturamento[index] || 0);
+        faturamentoAnterior.push(dadosAnterior.faturamento[index] || 0);
+        lucroBrutoAtual.push(dadosAtual.lucro_bruto[index] || 0);
+        lucroBrutoAnterior.push(dadosAnterior.lucro_bruto[index] || 0);
+        lucroLiquidoAtual.push(dadosAtual.lucro_liquido[index] || 0);
+        lucroLiquidoAnterior.push(dadosAnterior.lucro_liquido[index] || 0);
+        reservaCaixaAtual.push(dadosAtual.reserva_caixa[index] || 0);
+        reservaCaixaAnterior.push(dadosAnterior.reserva_caixa[index] || 0);
+    });
+    
+    // Aplicar acumulado se necessário
+    let dadosParaUsarAtual = {
+        faturamento: faturamentoAtual,
+        lucro_bruto: lucroBrutoAtual,
+        lucro_liquido: lucroLiquidoAtual,
+        reserva_caixa: reservaCaixaAtual
+    };
+    
+    let dadosParaUsarAnterior = {
+        faturamento: faturamentoAnterior,
+        lucro_bruto: lucroBrutoAnterior,
+        lucro_liquido: lucroLiquidoAnterior,
+        reserva_caixa: reservaCaixaAnterior
+    };
+    
+    if (tipoVisualizacao === 'acumulado') {
+        dadosParaUsarAtual = calcularAcumuladosSimples(dadosParaUsarAtual);
+        dadosParaUsarAnterior = calcularAcumuladosSimples(dadosParaUsarAnterior);
+    }
+    
+    // Atualizar gráficos
+    graficoFaturamento.data.labels = mesesFiltrados;
+    graficoFaturamento.data.datasets[0].data = dadosParaUsarAtual.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
+    graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsarAtual.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
+    graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsarAtual.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
+    graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsarAtual.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
+    graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
+    graficoReservaCaixa.update();
+    
+    // Atualizar dados globais para o toggle
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: faturamentoAtual,
+        lucro_bruto: lucroBrutoAtual,
+        lucro_liquido: lucroLiquidoAtual,
+        reserva_caixa: reservaCaixaAtual
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: faturamentoAnterior,
+        lucro_bruto: lucroBrutoAnterior,
+        lucro_liquido: lucroLiquidoAnterior,
+        reserva_caixa: reservaCaixaAnterior
+    };
+}
+
+function atualizarGraficosComDados(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    console.log('🔍 Atualizando gráficos com dados:', { dadosAtual, dadosAnterior });
+    
+    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Filtrar dados pelos meses selecionados
+    const mesesFiltrados = [];
+    const dadosFiltradosAtual = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    const dadosFiltradosAnterior = {
+        faturamento: [],
+        lucro_bruto: [],
+        lucro_liquido: [],
+        reserva_caixa: []
+    };
+    
+    mesesSelecionados.forEach(mes => {
+        const index = mes - 1;
+        mesesFiltrados.push(nomesMeses[index]);
+        
+        dadosFiltradosAtual.faturamento.push(dadosAtual.faturamento[index] || 0);
+        dadosFiltradosAtual.lucro_bruto.push(dadosAtual.lucro_bruto[index] || 0);
+        dadosFiltradosAtual.lucro_liquido.push(dadosAtual.lucro_liquido[index] || 0);
+        dadosFiltradosAtual.reserva_caixa.push(dadosAtual.reserva_caixa[index] || 0);
+        
+        dadosFiltradosAnterior.faturamento.push(dadosAnterior.faturamento[index] || 0);
+        dadosFiltradosAnterior.lucro_bruto.push(dadosAnterior.lucro_bruto[index] || 0);
+        dadosFiltradosAnterior.lucro_liquido.push(dadosAnterior.lucro_liquido[index] || 0);
+        dadosFiltradosAnterior.reserva_caixa.push(dadosAnterior.reserva_caixa[index] || 0);
+    });
+    
+    // Aplicar visualização (detalhado ou acumulado)
+    let dadosParaUsar = dadosFiltradosAtual;
+    let dadosParaUsarAnterior = dadosFiltradosAnterior;
+    
+    if (tipoVisualizacao === 'acumulado') {
+        dadosParaUsar = calcularAcumuladosSimples(dadosFiltradosAtual);
+        dadosParaUsarAnterior = calcularAcumuladosSimples(dadosFiltradosAnterior);
+    }
+    
+    console.log('🔍 Dados processados para gráficos:', { dadosParaUsar, dadosParaUsarAnterior });
+    
+    // Atualizar gráficos
+    graficoFaturamento.data.labels = mesesFiltrados;
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
+    graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
+    graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
+    graficoFaturamento.update();
+    
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
+    graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
+    graficoLucroBruto.update();
+    
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
+    graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
+    graficoLucroLiquido.update();
+    
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
+    graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
+    graficoReservaCaixa.update();
+    
+    // Salvar dados para o toggle
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAtual.faturamento,
+        lucro_bruto: dadosFiltradosAtual.lucro_bruto,
+        lucro_liquido: dadosFiltradosAtual.lucro_liquido,
+        reserva_caixa: dadosFiltradosAtual.reserva_caixa
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAnterior.faturamento,
+        lucro_bruto: dadosFiltradosAnterior.lucro_bruto,
+        lucro_liquido: dadosFiltradosAnterior.lucro_liquido,
+        reserva_caixa: dadosFiltradosAnterior.reserva_caixa
+    };
+}
+
+// Funções de filtro do dashboard
 function aplicarFiltrosDashboard() {
     console.log('Aplicando filtros do dashboard...');
     
@@ -691,13 +982,13 @@ function aplicarFiltrosDashboard() {
         }
     }
     
-    console.log('Meses selecionados:', mesesSelecionados);
-    console.log('Ano:', ano, 'Ano anterior:', anoAnterior);
-    
     if (mesesSelecionados.length === 0) {
-        alert('Selecione pelo menos um mês');
+        showToast('Selecione pelo menos um mês', 'warning');
         return;
     }
+    
+    // Mostrar loading
+    showLoading();
     
     // Fazer duas requisições: uma para o ano selecionado e outra para o ano anterior
     Promise.all([
@@ -736,24 +1027,62 @@ function aplicarFiltrosDashboard() {
     .then(([dataAtual, dataAnterior]) => {
         console.log('Dados recebidos:', dataAtual, dataAnterior);
         
+        // Validação simplificada
+        if (dataAtual && dataAtual.error) {
+            showToast(`Erro: ${dataAtual.error}`, 'error');
+            return;
+        }
+        
+        // Tratar ano anterior se houver erro
+        if (!dataAnterior || dataAnterior.error) {
+            dataAnterior = {
+                indicadores: { faturamento: 0, lucro_bruto: 0, lucro_liquido: 0, reserva_caixa: 0 },
+                dados_grafico: { 
+                    meses: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    faturamento: new Array(12).fill(0), 
+                    lucro_bruto: new Array(12).fill(0), 
+                    lucro_liquido: new Array(12).fill(0), 
+                    reserva_caixa: new Array(12).fill(0) 
+                }
+            };
+        }
+        
+        // Atualizar dados originais
+        dadosOriginais = dataAtual.dados_grafico;
+        dadosOriginaisAnterior = dataAnterior.dados_grafico;
+        
         // Atualizar cards com comparação
         atualizarCards(dataAtual.indicadores, dataAnterior.indicadores, ano, anoAnterior);
         
         // Atualizar gráficos de linha com comparação
         atualizarGraficosComComparacao(dataAtual.dados_grafico, dataAnterior.dados_grafico, mesesSelecionados, ano, anoAnterior);
         
-        // Atualizar gráfico de barras também
+        // Aplicar visualização atual (detalhado ou acumulado)
+        atualizarVisualizacao();
+        
+        // Atualizar gráfico de barras
         aplicarFiltrosCategorias();
         
-        console.log('Dashboard atualizado com sucesso');
+        showToast('Filtros aplicados com sucesso!', 'success');
     })
     .catch(error => {
         console.error('Erro ao aplicar filtros:', error);
-        alert('Erro ao aplicar filtros. Verifique o console para mais detalhes.');
+        showToast('Erro ao aplicar filtros. Verifique o console para mais detalhes.', 'error');
+    })
+    .finally(() => {
+        // Sempre remover loading
+        hideLoading();
     });
 }
 
+
 function atualizarGraficosComComparacao(dadosAtual, dadosAnterior, mesesSelecionados, ano, anoAnterior) {
+    console.log('🔍 DEBUG atualizarGraficosComComparacao:', {
+        dadosAtual,
+        dadosAnterior,
+        mesesSelecionados
+    });
+    
     const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     
     const mesesFiltrados = [];
@@ -785,35 +1114,59 @@ function atualizarGraficosComComparacao(dadosAtual, dadosAnterior, mesesSelecion
         dadosFiltradosAnterior.reserva_caixa.push(dadosAnterior.reserva_caixa[index] || 0);
     });
     
-    // Atualizar cada gráfico
+    // Atualizar dados originais ANTES de aplicar visualização
+    dadosOriginais = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAtual.faturamento,
+        lucro_bruto: dadosFiltradosAtual.lucro_bruto,
+        lucro_liquido: dadosFiltradosAtual.lucro_liquido,
+        reserva_caixa: dadosFiltradosAtual.reserva_caixa
+    };
+    
+    dadosOriginaisAnterior = {
+        meses: mesesFiltrados,
+        faturamento: dadosFiltradosAnterior.faturamento,
+        lucro_bruto: dadosFiltradosAnterior.lucro_bruto,
+        lucro_liquido: dadosFiltradosAnterior.lucro_liquido,
+        reserva_caixa: dadosFiltradosAnterior.reserva_caixa
+    };
+    
+    // Aplicar visualização (detalhado ou acumulado)
+    const dadosParaUsar = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginais) : dadosOriginais;
+    const dadosParaUsarAnterior = tipoVisualizacao === 'acumulado' ? calcularAcumulados(dadosOriginaisAnterior) : dadosOriginaisAnterior;
+    
+    // Atualizar labels dos gráficos
     graficoFaturamento.data.labels = mesesFiltrados;
-    graficoFaturamento.data.datasets[0].data = dadosFiltradosAtual.faturamento;
+    graficoLucroBruto.data.labels = mesesFiltrados;
+    graficoLucroLiquido.data.labels = mesesFiltrados;
+    graficoReservaCaixa.data.labels = mesesFiltrados;
+    
+    // Atualizar dados dos gráficos com a visualização correta
+    graficoFaturamento.data.datasets[0].data = dadosParaUsar.faturamento;
+    graficoFaturamento.data.datasets[1].data = dadosParaUsarAnterior.faturamento;
     graficoFaturamento.data.datasets[0].label = `Faturamento ${ano}`;
-    graficoFaturamento.data.datasets[1].data = dadosFiltradosAnterior.faturamento;
     graficoFaturamento.data.datasets[1].label = `Faturamento ${anoAnterior}`;
     graficoFaturamento.update();
     
-    graficoLucroBruto.data.labels = mesesFiltrados;
-    graficoLucroBruto.data.datasets[0].data = dadosFiltradosAtual.lucro_bruto;
+    graficoLucroBruto.data.datasets[0].data = dadosParaUsar.lucro_bruto;
+    graficoLucroBruto.data.datasets[1].data = dadosParaUsarAnterior.lucro_bruto;
     graficoLucroBruto.data.datasets[0].label = `Lucro Bruto ${ano}`;
-    graficoLucroBruto.data.datasets[1].data = dadosFiltradosAnterior.lucro_bruto;
     graficoLucroBruto.data.datasets[1].label = `Lucro Bruto ${anoAnterior}`;
     graficoLucroBruto.update();
     
-    graficoLucroLiquido.data.labels = mesesFiltrados;
-    graficoLucroLiquido.data.datasets[0].data = dadosFiltradosAtual.lucro_liquido;
+    graficoLucroLiquido.data.datasets[0].data = dadosParaUsar.lucro_liquido;
+    graficoLucroLiquido.data.datasets[1].data = dadosParaUsarAnterior.lucro_liquido;
     graficoLucroLiquido.data.datasets[0].label = `Lucro Líquido ${ano}`;
-    graficoLucroLiquido.data.datasets[1].data = dadosFiltradosAnterior.lucro_liquido;
     graficoLucroLiquido.data.datasets[1].label = `Lucro Líquido ${anoAnterior}`;
     graficoLucroLiquido.update();
     
-    graficoReservaCaixa.data.labels = mesesFiltrados;
-    graficoReservaCaixa.data.datasets[0].data = dadosFiltradosAtual.reserva_caixa;
+    graficoReservaCaixa.data.datasets[0].data = dadosParaUsar.reserva_caixa;
+    graficoReservaCaixa.data.datasets[1].data = dadosParaUsarAnterior.reserva_caixa;
     graficoReservaCaixa.data.datasets[0].label = `Reserva de Caixa ${ano}`;
-    graficoReservaCaixa.data.datasets[1].data = dadosFiltradosAnterior.reserva_caixa;
     graficoReservaCaixa.data.datasets[1].label = `Reserva de Caixa ${anoAnterior}`;
     graficoReservaCaixa.update();
 }
+
 
 function limparFiltrosDashboard() {
     console.log('Limpando filtros do dashboard...');
@@ -832,24 +1185,42 @@ function limparFiltrosDashboard() {
     aplicarFiltrosDashboard();
 }
 
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', function() {
-    inicializarGraficos();
-});
-
 function atualizarCards(indicadoresAtual, indicadoresAnterior, ano, anoAnterior) {
+    // VALIDAÇÃO: Verificar se os objetos existem
+    if (!indicadoresAtual) {
+        console.error('indicadoresAtual está undefined');
+        return;
+    }
+    
+    if (!indicadoresAnterior) {
+        console.error('indicadoresAnterior está undefined');
+        indicadoresAnterior = {
+            faturamento: 0,
+            lucro_bruto: 0,
+            lucro_liquido: 0,
+            reserva_caixa: 0
+        };
+    }
+    
+    // Garantir que as propriedades existem
+    const faturamento = indicadoresAtual.faturamento || 0;
+    const lucroBruto = indicadoresAtual.lucro_bruto || 0;
+    const lucroLiquido = indicadoresAtual.lucro_liquido || 0;
+    const reservaCaixa = indicadoresAtual.reserva_caixa || 0;
+    
     // Atualizar valores nos cards
-    document.getElementById('valorFaturamento').textContent = `R$ ${indicadoresAtual.faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    document.getElementById('valorLucroBruto').textContent = `R$ ${indicadoresAtual.lucro_bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    document.getElementById('valorLucroLiquido').textContent = `R$ ${indicadoresAtual.lucro_liquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    document.getElementById('valorReservaCaixa').textContent = `R$ ${indicadoresAtual.reserva_caixa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorFaturamento').textContent = `R$ ${faturamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorLucroBruto').textContent = `R$ ${lucroBruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorLucroLiquido').textContent = `R$ ${lucroLiquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    document.getElementById('valorReservaCaixa').textContent = `R$ ${reservaCaixa.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
     
     // Calcular e atualizar variações
-    atualizarVariacao('variacaoFaturamento', indicadoresAtual.faturamento, indicadoresAnterior.faturamento, anoAnterior);
-    atualizarVariacao('variacaoLucroBruto', indicadoresAtual.lucro_bruto, indicadoresAnterior.lucro_bruto, anoAnterior);
-    atualizarVariacao('variacaoLucroLiquido', indicadoresAtual.lucro_liquido, indicadoresAnterior.lucro_liquido, anoAnterior);
-    atualizarVariacao('variacaoReservaCaixa', indicadoresAtual.reserva_caixa, indicadoresAnterior.reserva_caixa, anoAnterior);
+    atualizarVariacao('variacaoFaturamento', faturamento, indicadoresAnterior.faturamento || 0, anoAnterior);
+    atualizarVariacao('variacaoLucroBruto', lucroBruto, indicadoresAnterior.lucro_bruto || 0, anoAnterior);
+    atualizarVariacao('variacaoLucroLiquido', lucroLiquido, indicadoresAnterior.lucro_liquido || 0, anoAnterior);
+    atualizarVariacao('variacaoReservaCaixa', reservaCaixa, indicadoresAnterior.reserva_caixa || 0, anoAnterior);
 }
+
 
 function atualizarVariacao(elementId, valorAtual, valorAnterior, anoAnterior) {
     const elemento = document.getElementById(elementId);
@@ -868,6 +1239,75 @@ function atualizarVariacao(elementId, valorAtual, valorAnterior, anoAnterior) {
         <i class="fas ${icone} ${cor}"></i>
         ${Math.abs(variacao).toFixed(1)}% vs ${anoAnterior}
     `;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 Iniciando carregamento do dashboard...');
+    
+    // Mostrar loading
+    showLoading();
+    
+    try {
+        // Calcular dados acumulados iniciais
+        dadosAcumulados = calcularAcumulados(dadosOriginais);
+        dadosAcumuladosAnterior = calcularAcumulados(dadosOriginaisAnterior);
+        
+        // Criar gráficos
+        inicializarGraficos();
+        
+        // Toggle entre mensal e acumulado
+        document.querySelectorAll('input[name="tipoVisualizacao"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                tipoVisualizacao = this.value;
+                atualizarVisualizacao();
+            });
+        });
+        
+        console.log('✅ Dashboard carregado com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dashboard:', error);
+    } finally {
+        // SEMPRE remover o loading, mesmo se houver erro
+        setTimeout(() => {
+            hideLoading();
+        }, 1000); // Aguardar 1 segundo para garantir que tudo carregou
+    }
+});
+
+function showLoading() {
+    // Remover loading existente se houver
+    const existingOverlay = document.getElementById('loading-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    // Criar novo loading
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+             background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="text-primary">Carregando Dashboard...</h5>
+                <p class="text-muted mb-0">Aguarde enquanto os dados são processados</p>
+            </div>
+        </div>
+    `);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        // Adicionar animação de fade out
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease-out';
+        
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
 }
 </script>
 {% endblock %}

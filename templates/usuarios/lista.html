@@ -1,167 +1,74 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Gerenciar Usuários</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('registro') }}" class="btn btn-primary">
-            <i class="fas fa-user-plus me-2"></i>Novo Usuário
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gerenciar Usuários</h2>
+        <a href="{{ url_for('novo_usuario') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Novo Usuário
         </a>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Usuários do Sistema</h5>
-        <span class="badge bg-light text-white">{{ usuarios|length }} usuários</span>
-    </div>
-    <div class="card-body">
-        {% if usuarios %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Nome Completo</th>
-                        <th>Usuário</th>
-                        <th>Email</th>
-                        <th>Tipo</th>
-                        <th>Status</th>
-                        <th>Data Criação</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for usuario in usuarios %}
-                    <tr data-usuario-id="{{ usuario.id }}">
-                        <td><strong>{{ usuario.nome_completo }}</strong></td>
-                        <td>{{ usuario.username }}</td>
-                        <td>{{ usuario.email }}</td>
-                        <td>
-                            {% if usuario.is_admin %}
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-crown me-1"></i>Administrador
-                                </span>
-                            {% else %}
-                                <span class="badge bg-info">
-                                    <i class="fas fa-user me-1"></i>Usuário
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if usuario.ativo %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>Ativo
-                                </span>
-                            {% else %}
-                                <span class="badge bg-danger">
-                                    <i class="fas fa-times me-1"></i>Inativo
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>{{ usuario.data_criacao.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-    <div class="btn-group" role="group">
-        <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario({{ usuario.id }})" title="Editar">
-            <i class="fas fa-edit"></i>
-        </button>
-        {% if usuario.id != current_user.id %}
-        <button class="btn btn-sm btn-outline-{{ 'danger' if usuario.ativo else 'success' }}" 
-                onclick="toggleUsuario({{ usuario.id }}, {{ 'true' if usuario.ativo else 'false' }})" 
-                title="{{ 'Desativar' if usuario.ativo else 'Ativar' }}">
-            <i class="fas fa-{{ 'ban' if usuario.ativo else 'check' }}"></i>
-        </button>
-        <button class="btn btn-sm btn-outline-danger" onclick="excluirUsuario({{ usuario.id }})" title="Excluir">
-            <i class="fas fa-trash"></i>
-        </button>
-        {% else %}
-        <span class="badge bg-info ms-2">
-            <i class="fas fa-user-shield"></i> Você
-        </span>
-        {% endif %}
-    </div>
-</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Usuários do Sistema</h5>
         </div>
-        {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Nenhum usuário encontrado</h5>
-            <p class="text-muted">Comece criando o primeiro usuário do sistema!</p>
-            <a href="{{ url_for('registro') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus me-2"></i>Criar Primeiro Usuário
-            </a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Modal Editar Usuário -->
-<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalEditarUsuarioLabel">Editar Usuário</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="card-body">
+            {% if usuarios %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Nome Completo</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Data Cadastro</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr class="{% if not usuario.ativo %}registro-inativo{% endif %}">
+                            <td>
+                                <strong>{{ usuario.username }}</strong>
+                                {% if usuario.is_admin %}
+                                <i class="fas fa-crown text-warning ms-1" title="Administrador"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.nome_completo }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>
+                                {% if usuario.is_admin %}
+                                <span class="badge bg-warning">Admin</span>
+                                {% else %}
+                                <span class="badge bg-info">Usuário</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.data_cadastro.strftime('%d/%m/%Y %H:%M') if usuario.data_cadastro else '-' }}</td>
+                            <td>
+                                <span class="badge {% if usuario.ativo %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if usuario.ativo %}Ativo{% else %}Inativo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <!-- LINK SIMPLES SEM AJAX -->
+                                <a href="{{ url_for('editar_usuario', id=usuario.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <form id="formEditarUsuario">
-                <div class="modal-body">
-                    <input type="hidden" id="editUsuarioId">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editNomeCompleto" class="form-label">Nome Completo</label>
-                                <input type="text" class="form-control" id="editNomeCompleto" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editUsername" class="form-label">Nome de Usuário</label>
-                                <input type="text" class="form-control" id="editUsername" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editEmail" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="editEmail" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="editIsAdmin">
-                                    <label class="form-check-label" for="editIsAdmin">
-                                        É Administrador
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="editAtivo">
-                                    <label class="form-check-label" for="editAtivo">
-                                        Usuário Ativo
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editNovaSenha" class="form-label">Nova Senha (opcional)</label>
-                        <input type="password" class="form-control" id="editNovaSenha" placeholder="Deixe em branco para manter a senha atual">
-                        <div class="form-text">Mínimo 6 caracteres se preenchido</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Atualizar Usuário
-                    </button>
-                </div>
-            </form>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                Nenhum usuário cadastrado.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -201,7 +108,7 @@
 function editarUsuario(id) {
     // Buscar dados do usuário
     fetch(`/usuarios/editar/${id}`)
-        .then(response => response.json())
+        .then(response => response.text())
         .then(data => {
             document.getElementById('editUsuarioId').value = data.id;
             document.getElementById('editNomeCompleto').value = data.nome_completo;
@@ -227,7 +134,7 @@ function toggleUsuario(id, ativo) {
         fetch(`/usuarios/toggle/${id}`, {
             method: 'POST'
         })
-        .then(response => response.json())
+        .then(response => response.text())
         .then(result => {
             if (result.status === 'success') {
                 mostrarAlerta(result.message, 'success');

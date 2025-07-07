@@ -24,3 +24,4 @@ class ConfiguracaoCalculoForm(FlaskForm):
     nome = StringField('Nome do Cálculo', validators=[DataRequired()])
     categorias_positivas = MultiCheckboxField('Categorias que Somam', coerce=int)
     categorias_negativas = MultiCheckboxField('Categorias que Subtraem', coerce=int)
+
