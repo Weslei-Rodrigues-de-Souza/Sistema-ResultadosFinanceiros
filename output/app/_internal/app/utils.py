@@ -1,4 +1,4 @@
-from app.models import db, Conta, Categoria, ConfiguracaoCalculo, TipoConta
+from __app.__models import db, Conta, Categoria, ConfiguracaoCalculo, TipoConta
 from sqlalchemy import extract, func
 import json
 from datetime import datetime

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app import db
-from app.models import Categoria, Conta, ConfiguracaoCalculo, TipoConta
+from __app import db
+from __app.__models import Categoria, Conta, ConfiguracaoCalculo, TipoConta
 from app.forms import CategoriaForm, ContaForm, ConfiguracaoCalculoForm
 from datetime import datetime
 from sqlalchemy.exc import OperationalError

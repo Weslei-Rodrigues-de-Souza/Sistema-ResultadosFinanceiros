@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, DecimalField, DateField, TextAreaField, SelectMultipleField
 from wtforms.validators import DataRequired, NumberRange, Length
 from wtforms.widgets import CheckboxInput, ListWidget
-from app.models import TipoConta, Categoria
+from __app.__models import TipoConta, Categoria
 
 class MultiCheckboxField(SelectMultipleField):
     widget = ListWidget(prefix_label=False)

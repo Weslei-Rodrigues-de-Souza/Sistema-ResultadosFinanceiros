@@ -41,12 +41,20 @@ def set_dashboard_cache(empresa_id, ano, data):
     dashboard_cache[cache_key] = (data, datetime.now())
 
 # Configuração para MySQL
+# MYSQL_CONFIG = {
+#     'host': '162.241.203.176',
+#     'port': 3306,
+#     'user': 'gerent67_weslei',
+#     'password': '1saZfK(rg',
+#     'database': 'gerent67_sistemas'
+# }
+
 MYSQL_CONFIG = {
-    'host': '162.241.203.176',
+    'host': 'localhost',
     'port': 3306,
-    'user': 'gerent67_weslei',
-    'password': '1saZfK(rg',
-    'database': 'gerent67_sistemas'
+    'user': 'root',
+    'password': '992132',
+    'database': 'elevalucro_db'
 }
 
 # Configuração do Flask
