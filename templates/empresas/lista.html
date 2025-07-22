@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Seleção de Empresa - ELEVALUCRO{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><i class="fas fa-building"></i> Selecionar Empresa</h4>
+                    <p class="mb-0">Escolha a empresa para acessar o sistema</p>
+                </div>
+                <div class="card-body">
+                    {% if empresas %}
+                        <div class="row">
+                            {% for empresa in empresas %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card empresa-card">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">{{ empresa.nome }}</h5>
+                                        {% if empresa.descricao %}
+                                        <p class="card-text text-muted">{{ empresa.descricao }}</p>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('selecionar_empresa', id=empresa.id) }}">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-check"></i> Selecionar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h5>Nenhuma empresa disponível</h5>
+                            <p>Você não tem acesso a nenhuma empresa ativa no momento.</p>
+                            <p>Entre em contato com o administrador do sistema.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Fazer Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.empresa-card {
+    transition: transform 0.2s;
+    border: 2px solid #e9ecef;
+}
+.empresa-card:hover {
+    transform: translateY(-5px);
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+}
+</style>
+{% endblock %}

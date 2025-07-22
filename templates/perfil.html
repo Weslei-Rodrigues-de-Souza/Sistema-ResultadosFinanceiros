@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Perfil do Usuário</h2>
+    <div class="card">
+        <div class="card-header">Alterar senha</div>
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.senha_atual.label(class="form-label") }}
+                    {{ form.senha_atual(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.nova_senha.label(class="form-label") }}
+                    {{ form.nova_senha(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.confirma_nova_senha.label(class="form-label") }}
+                    {{ form.confirma_nova_senha(class="form-control") }}
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

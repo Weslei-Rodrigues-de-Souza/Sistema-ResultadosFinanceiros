@@ -1,3 +1,8 @@
+import openpyxl
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.styles import Font
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, make_response
+from io import BytesIO
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -15,10 +20,10 @@ from datetime import datetime, timedelta
 import pandas as pd
 import tempfile
 import os
-import json
 
 # Cache simples em memória
 dashboard_cache = {}
+
 CACHE_DURATION = 300  # 5 minutos
 
 def get_dashboard_cache_key(empresa_id, ano):
@@ -42,11 +47,11 @@ def set_dashboard_cache(empresa_id, ano, data):
 
 # Configuração para MySQL
 # MYSQL_CONFIG = {
-#     'host': '162.241.203.176',
+#     'host': 'ResumosFinanceiros.mysql.pythonanywhere-services.com',
 #     'port': 3306,
-#     'user': 'gerent67_weslei',
-#     'password': '1saZfK(rg',
-#     'database': 'gerent67_sistemas'
+#     'user': 'ResumosFinanceir',
+#     'password': 'SOe(K1+v',
+#     'database': 'ResumosFinanceir$default'
 # }
 
 MYSQL_CONFIG = {
@@ -79,7 +84,18 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['CLIENTES_DIR'] = os.path.join(os.path.dirname(__file__), 'clientes')
+app.config['SESSION_TYPE'] = 'filesystem'  # ou 'redis' se disponível
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'elevalucro_'
+app.config['SESSION_COOKIE_NAME'] = 'elevalucro_session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # True apenas em HTTPS/produção
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
+# Forçar nova sessão a cada login
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 
 # Inicializar SQLAlchemy
 db = SQLAlchemy(app)
@@ -129,12 +145,6 @@ class Usuario(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def pode_acessar_empresa(self, empresa_id):
-        """Verifica se o usuário pode acessar uma empresa específica"""
-        if self.is_admin:
-            return True
-        return any(empresa.id == empresa_id for empresa in self.empresas)
-    
     def get_empresas_acessiveis(self):
         """Retorna as empresas que o usuário pode acessar"""
         if self.is_admin:
@@ -143,6 +153,43 @@ class Usuario(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<Usuario {self.username}>'
+
+    def pode_acessar_empresa(self, empresa_id):
+        """Verifica se o usuário pode acessar uma empresa específica"""
+        try:
+            print(f"🔍 VERIFICAÇÃO: Usuário {self.username} → Empresa {empresa_id}")
+            
+            if getattr(self, 'is_admin', False):
+                print(f"✅ ADMIN: Acesso liberado")
+                return True
+            
+            print(f"👤 Verificando USER_EMPRESAS com user_id...")
+            
+            from sqlalchemy import text
+            with db.engine.connect() as connection:
+                # CORREÇÃO: Usar user_id
+                result = connection.execute(text(
+                    """SELECT COUNT(*) FROM user_empresas ue
+                    INNER JOIN empresas e ON ue.empresa_id = e.id
+                    WHERE ue.user_id = :uid 
+                    AND ue.empresa_id = :eid 
+                    AND e.ativa = 1"""
+                ), {"uid": self.id, "eid": empresa_id}).fetchone()
+                
+                tem_acesso = result[0] > 0
+                print(f"📊 Resultado: {'TEM ACESSO' if tem_acesso else 'SEM ACESSO'}")
+                return tem_acesso
+                
+        except Exception as e:
+            print(f"❌ ERRO: {e}")
+            if getattr(self, 'is_admin', False):
+                return True
+            return False
+
+
+
+
+
 
 class Categoria(db.Model):
     __tablename__ = 'categorias'
@@ -364,6 +411,42 @@ class UsuarioEditForm(FlaskForm):
                                   choices=[], 
                                   render_kw={"class": "form-control", "multiple": True})
     submit = SubmitField('Atualizar')
+
+# Definição do formulário de troca de senha
+class TrocarSenhaForm(FlaskForm):
+    senha_atual = PasswordField("Senha atual", validators=[DataRequired()])
+    nova_senha = PasswordField("Nova senha", validators=[
+        DataRequired(),
+        Length(min=6, message="Mínimo 6 caracteres")
+    ])
+    confirma_nova_senha = PasswordField("Confirme a nova senha", validators=[
+        DataRequired(),
+        EqualTo('nova_senha', message='Senhas não conferem')
+    ])
+    submit = SubmitField("Salvar nova senha")
+
+class UsuarioEmpresa(db.Model):
+    __tablename__ = 'usuarios_empresas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    ativo = db.Column(db.Boolean, default=True)
+    data_associacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_desassociacao = db.Column(db.DateTime)
+    
+    # Relacionamentos
+    usuario = db.relationship('Usuario', backref='empresas_associadas')
+    empresa = db.relationship('Empresa', backref='usuarios_associados')
+    
+    # Índices para performance
+    __table_args__ = (
+        db.Index('idx_usuario_empresa_ativo', 'usuario_id', 'empresa_id', 'ativo'),
+        db.UniqueConstraint('usuario_id', 'empresa_id', name='unique_usuario_empresa')
+    )
+    
+    def __repr__(self):
+        return f'<UsuarioEmpresa {self.usuario_id}-{self.empresa_id}>'
 
 # Funções de planilha
 def processar_importacao_planilha(arquivo, empresa_id):
@@ -615,7 +698,20 @@ def processar_importacao_planilha(arquivo, empresa_id):
             'erro': f"Erro geral ao processar planilha: {str(e)}"
         }
 
-
+def gerar_template_planilha():
+    # Exemplo: criar planilha Excel em branco com colunas de exemplo
+    colunas = ['Campo1', 'Campo2', 'Campo3']
+    df = pd.DataFrame(columns=colunas)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template')
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="template_importacao.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 # Funções de cálculo
 
 def calcular_indicadores_anuais_rapido(ano, empresa_id):
@@ -788,9 +884,122 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    flash('Logout realizado com sucesso', 'info')
-    return redirect(url_for('login'))
+    try:
+        # Log de auditoria ANTES do logout
+        user_id = current_user.id
+        username = current_user.username
+        empresa_atual = session.get('empresa_selecionada')
+        
+        print(f"🔐 LOGOUT: Usuário {username} (ID: {user_id}) fazendo logout da empresa {empresa_atual}")
+        
+        # Atualizar último login
+        try:
+            current_user.ultimo_login = datetime.utcnow()
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"⚠️ Erro ao atualizar último login: {e}")
+        
+        # CRÍTICO: Limpar TODA a sessão MÚLTIPLAS VEZES para garantir
+        session.clear()  # Primeira limpeza
+        
+        # Fazer logout do Flask-Login
+        logout_user()
+        
+        # Segunda limpeza por segurança (após logout)
+        session.clear()
+        
+        # Terceira limpeza - remover chaves específicas explicitamente
+        session.pop('empresa_selecionada', None)
+        session.pop('_user_id', None)
+        session.pop('_fresh', None)
+        
+        # Forçar nova sessão
+        session.permanent = False
+        session.modified = True
+        
+        print(f"✅ LOGOUT COMPLETO: Sessão limpa para usuário {username}")
+        
+        # Flash message E redirecionamento com parâmetros para forçar nova sessão
+        flash('Logout realizado com sucesso!', 'success')
+        response = make_response(redirect(url_for('login')))
+        
+        # Limpar cookies de sessão do navegador
+        response.set_cookie('session', '', expires=0)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        print(f"❌ ERRO CRÍTICO no logout: {e}")
+        # Em caso de QUALQUER erro, forçar limpeza total
+        try:
+            session.clear()
+            logout_user()
+            session.clear()  # Dupla limpeza
+        except:
+            pass
+        
+        response = make_response(redirect(url_for('login')))
+        response.set_cookie('session', '', expires=0)
+        return response
+
+# @app.before_request
+# def verificar_seguranca_empresa():
+#     """
+#     MIDDLEWARE CRÍTICO DE SEGURANÇA
+#     Verifica a integridade da sessão antes de cada requisição
+#     """
+    
+#     # Rotas que não precisam de verificação
+#     rotas_publicas = [
+#         'login', 'register', 'static', 'empresas', 
+#         'selecionar_empresa', 'logout'
+#     ]
+    
+#     # Pular verificação para rotas públicas
+#     if request.endpoint in rotas_publicas or not current_user.is_authenticated:
+#         return
+    
+#     empresa_id = session.get('empresa_selecionada')
+    
+#     if empresa_id:
+#         try:
+#             # VERIFICAÇÃO CRÍTICA: Usuário ainda tem acesso à empresa?
+#             acesso = UsuarioEmpresa.query.filter_by(
+#                 usuario_id=current_user.id,
+#                 empresa_id=empresa_id,
+#                 ativo=True
+#             ).first()
+            
+#             if not acesso:
+#                 # ALERTA DE SEGURANÇA: Usuário perdeu acesso
+#                 print(f"🚨 SECURITY ALERT: Usuário {current_user.id} perdeu acesso à empresa {empresa_id}")
+                
+#                 # Limpar sessão imediatamente
+#                 session.clear()
+#                 session['_flashes'] = [('warning', 'Sessão inválida detectada. Faça login novamente.')]
+                
+#                 # Forçar logout completo
+#                 logout_user()
+#                 return redirect(url_for('login'))
+                
+#             # VERIFICAÇÃO EXTRA: Empresa ainda está ativa?
+#             empresa = Empresa.query.filter_by(id=empresa_id, ativa=True).first()
+#             if not empresa:
+#                 print(f"⚠️ Empresa {empresa_id} foi desativada")
+#                 session.pop('empresa_selecionada', None)
+#                 flash('A empresa selecionada foi desativada. Selecione outra empresa.', 'warning')
+#                 return redirect(url_for('empresas'))
+                
+#         except Exception as e:
+#             # Em caso de erro, limpar tudo por segurança
+#             print(f"❌ Erro na verificação de segurança: {e}")
+#             session.clear()
+#             logout_user()
+#             return redirect(url_for('login'))
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -1194,18 +1403,57 @@ def reativar_conta(id):
 @login_required
 def baixar_template_contas():
     try:
-        wb, erro = gerar_template_planilha()
+        # Buscar categorias da empresa
+        empresa_id = session.get('empresa_selecionada')
+        categorias = Categoria.query.filter_by(empresa_id=empresa_id, ativa=True).order_by(Categoria.nome).all()
+        nomes_categorias = [cat.nome for cat in categorias]
         
-        if erro:
-            flash(erro, 'warning')
+        if not nomes_categorias:
+            flash('Nenhuma categoria encontrada. Cadastre categorias antes de baixar o template.', 'warning')
             return redirect(url_for('listar_contas'))
         
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
-        wb.save(temp_file.name)
-        temp_file.close()
+        # Criar workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Contas'
+        
+        # Cabeçalhos
+        headers = ['Categoria', 'Data', 'Valor', 'Descrição']
+        for col, header in enumerate(headers, 1):
+            ws.cell(row=1, column=col).value = header
+            ws.cell(row=1, column=col).font = openpyxl.styles.Font(bold=True)
+        
+        # Criar validação de dados para categoria
+        formula_categorias = '"' + ','.join(nomes_categorias) + '"'
+        data_validation = DataValidation(
+            type="list",
+            formula1=formula_categorias,
+            allow_blank=False
+        )
+        
+        # Aplicar validação para 100 linhas na coluna Categoria (A)
+        data_validation.add('A2:A101')
+        ws.add_data_validation(data_validation)
+        
+        # Formatação adicional
+        ws.column_dimensions['A'].width = 20  # Categoria
+        ws.column_dimensions['B'].width = 12  # Data
+        ws.column_dimensions['C'].width = 15  # Valor
+        ws.column_dimensions['D'].width = 30  # Descrição
+        
+        # Adicionar linha de exemplo
+        ws.cell(row=2, column=1).value = nomes_categorias[0] if nomes_categorias else 'Exemplo'
+        ws.cell(row=2, column=2).value = '01/01/2025'
+        ws.cell(row=2, column=3).value = 1000.00
+        ws.cell(row=2, column=4).value = 'Exemplo de lançamento'
+        
+        # Salvar em BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
         
         return send_file(
-            temp_file.name,
+            output,
             as_attachment=True,
             download_name='template_contas_elevalucro.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -1214,7 +1462,7 @@ def baixar_template_contas():
     except Exception as e:
         flash(f'Erro ao gerar template: {str(e)}', 'error')
         return redirect(url_for('listar_contas'))
-
+    
 @app.route('/contas/importar', methods=['POST'])
 @login_required
 @empresa_required
@@ -1613,23 +1861,113 @@ def excluir_usuario(id):
         return jsonify({'status': 'error', 'message': f'Erro ao excluir usuário: {str(e)}'})
 
 # Rotas de Empresas
-@app.route('/empresas', methods=['GET'])
+@app.route('/empresas')
 @login_required
 def empresas():
     try:
-        # Usuários comuns só veem suas empresas associadas
-        if current_user.is_admin:
-            empresas = Empresa.query.all()
+        session.pop('empresa_selecionada', None)
+        
+        print(f"\n{'='*50}")
+        print(f"🔍 DEBUG EMPRESAS - COLUNA CORRETA: user_id")
+        print(f"👤 Usuário: {current_user.username} (ID: {current_user.id})")
+        
+        is_user_admin = getattr(current_user, 'is_admin', False)
+        print(f"🔑 Admin Status: {is_user_admin}")
+        
+        if is_user_admin:
+            print("🔑 ADMIN: Listando todas as empresas")
+            empresas_usuario = Empresa.query.filter_by(ativa=True).order_by(Empresa.nome).all()
+            
         else:
-            empresas = current_user.get_empresas_acessiveis()
+            print("👤 USUÁRIO COMUM: Consultando USER_EMPRESAS com user_id")
+            
+            from sqlalchemy import text
+            with db.engine.connect() as connection:
+                dados_usuario = connection.execute(text(
+                    """SELECT DISTINCT e.id, e.nome
+                       FROM user_empresas ue
+                       INNER JOIN empresas e ON ue.empresa_id = e.id  
+                       WHERE ue.user_id = :uid
+                       AND e.ativa = 1"""
+                ), {"uid": current_user.id}).fetchall()
+                
+                print(f"📊 Registros encontrados: {len(dados_usuario)}")
+                
+                empresas_usuario = []
+                for dados in dados_usuario:
+                    empresa_id, empresa_nome = dados[0], dados[1]
+                    print(f"   - Empresa: {empresa_nome} (ID: {empresa_id})")
+                    
+                    empresa_obj = Empresa.query.get(empresa_id)
+                    if empresa_obj and empresa_obj.ativa:
+                        empresas_usuario.append(empresa_obj)
+                        print(f"   ✅ INCLUÍDA: {empresa_obj.nome}")
+        
+        print(f"\n📈 RESULTADO FINAL:")
+        print(f"   Total empresas: {len(empresas_usuario)}")
+        for i, emp in enumerate(empresas_usuario, 1):
+            print(f"   {i}. {emp.nome} (ID: {emp.id})")
+        print(f"{'='*50}\n")
+        
+        if not empresas_usuario and not is_user_admin:
+            flash('Você não possui empresas associadas ativas.', 'warning')
+        
+        # CORREÇÃO: Criar formulário completo para empresas
+        try:
+            # Se você tem uma classe EmpresaForm definida, use ela
+            form = EmpresaForm()
+        except NameError:
+            # Se não tem, criar form mock com os campos esperados pelo template
+            from flask_wtf import FlaskForm
+            from wtforms import StringField, SubmitField
+            from wtforms.validators import DataRequired
+            
+            class FormMockEmpresa(FlaskForm):
+                nome = StringField('Nome da Empresa', validators=[DataRequired()])
+                cnpj = StringField('CNPJ')
+                email = StringField('Email')
+                telefone = StringField('Telefone')
+                endereco = StringField('Endereço')
+                submit = SubmitField('Salvar')
+                
+                def hidden_tag(self):
+                    return '<input type="hidden" name="csrf_token" value="mock"/>'
+            
+            form = FormMockEmpresa()
+            
+        return render_template('empresas/cadastro_empresas.html', 
+                             empresas=empresas_usuario, 
+                             form=form)
         
     except Exception as e:
-        #print(f"Erro ao listar empresas: {e}")
-        empresas = []
-        flash('Erro ao carregar empresas!', 'error')
-    
-    form = EmpresaForm()
-    return render_template('empresas/cadastro_empresas.html', empresas=empresas, form=form)
+        print(f"❌ ERRO: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Fallback com form mock completo
+        try:
+            form = EmpresaForm()
+        except NameError:
+            from flask_wtf import FlaskForm
+            from wtforms import StringField, SubmitField
+            
+            class FormMockEmpresa(FlaskForm):
+                nome = StringField('Nome')
+                cnpj = StringField('CNPJ')
+                email = StringField('Email')
+                telefone = StringField('Telefone')
+                endereco = StringField('Endereço')
+                submit = SubmitField('Salvar')
+                
+                def hidden_tag(self):
+                    return '<input type="hidden" name="csrf_token" value="mock"/>'
+            
+            form = FormMockEmpresa()
+            
+        return render_template('empresas/cadastro_empresas.html', 
+                             empresas=[], 
+                             form=form)
+
 
 @app.route('/empresas/nova', methods=['POST'])
 @login_required
@@ -1667,21 +2005,77 @@ def nova_empresa():
 @login_required
 def selecionar_empresa(id):
     try:
-        # Verificar se o usuário pode acessar esta empresa
-        if not current_user.pode_acessar_empresa(id):
+        print(f"\n🎯 === INÍCIO SELEÇÃO EMPRESA ===")
+        print(f"👤 Usuário: {current_user.username} (ID: {current_user.id})")
+        print(f"🏢 Empresa solicitada: ID {id}")
+        print(f"🔑 Status admin: {getattr(current_user, 'is_admin', False)}")
+        
+        # PASSO 1: Verificar se empresa existe e está ativa
+        empresa = Empresa.query.filter_by(id=id, ativa=True).first()
+        if not empresa:
+            print(f"❌ Empresa {id} não encontrada ou inativa")
+            flash('Empresa não encontrada ou inativa.', 'error')
+            return redirect(url_for('empresas'))
+        
+        print(f"✅ Empresa encontrada: {empresa.nome}")
+        
+        # PASSO 2: Verificação de permissão MAIS FLEXÍVEL
+        print(f"🔐 Verificando permissões...")
+        
+        # Para administradores: acesso SEMPRE liberado
+        if getattr(current_user, 'is_admin', False):
+            print(f"🔑 Usuário {current_user.username} é ADMIN - acesso LIBERADO automaticamente")
+            tem_permissao = True
+        else:
+            # Para usuários comuns: verificar associação
+            print(f"👤 Usuário comum - verificando associações...")
+            tem_permissao = current_user.pode_acessar_empresa(id)
+        
+        print(f"📊 Resultado permissão: {'AUTORIZADO' if tem_permissao else 'NEGADO'}")
+        
+        if not tem_permissao:
+            print(f"🚨 ACESSO NEGADO para usuário {current_user.username}")
             flash('Você não tem permissão para acessar esta empresa.', 'error')
             return redirect(url_for('empresas'))
         
-        empresa = Empresa.query.filter_by(id=id, ativa=True).first()
-        if empresa:
-            session['empresa_selecionada'] = empresa.id
-            flash(f'Empresa "{empresa.nome}" selecionada com sucesso!', 'success')
-        else:
-            flash('Empresa não encontrada ou inativa.', 'error')
+        # PASSO 3: Limpar sessão anterior e definir nova empresa
+        print(f"🧹 Limpando sessão anterior...")
+        session.pop('empresa_selecionada', None)
+        
+        print(f"📝 Definindo nova empresa na sessão...")
+        session['empresa_selecionada'] = empresa.id
+        session.permanent = False
+        session.modified = True
+        
+        # PASSO 4: Confirmação e log
+        print(f"✅ === SUCESSO NA SELEÇÃO ===")
+        print(f"✅ Usuário: {current_user.username}")
+        print(f"✅ Empresa: {empresa.nome} (ID: {empresa.id})")
+        print(f"✅ Sessão atualizada com empresa_selecionada = {session.get('empresa_selecionada')}")
+        
+        # PASSO 5: Feedback e redirecionamento
+        flash(f'Empresa "{empresa.nome}" selecionada com sucesso!', 'success')
+        
+        # Verificar se dashboard existe, senão redirecionar para uma rota segura
+        try:
+            return redirect(url_for('dashboard'))
+        except:
+            print("⚠️ Rota 'dashboard' não encontrada, redirecionando para empresas")
+            return redirect(url_for('empresas'))
+        
     except Exception as e:
-        flash(f'Erro ao selecionar empresa: {str(e)}', 'error')
-    
-    return redirect(url_for('empresas'))
+        print(f"❌ === ERRO CRÍTICO NA SELEÇÃO ===")
+        print(f"❌ Erro: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Limpeza de segurança em caso de erro
+        session.pop('empresa_selecionada', None)
+        
+        flash(f'Erro interno ao selecionar empresa. Tente novamente.', 'error')
+        return redirect(url_for('empresas'))
+
+
 
 @app.route('/empresas/editar/<int:id>', methods=['POST'])
 @login_required
@@ -1836,13 +2230,13 @@ def criar_usuario_admin():
     admin = Usuario.query.filter_by(username='admin').first()
     if not admin:
         admin = Usuario(
-            username='admin',
-            email='admin@elevalucro.com',
+            username='Weslei',
+            email='weslei@gesqual.com.br',
             nome_completo='Administrador ELEVALUCRO',
             is_admin=True,
             ativo=True
         )
-        admin.set_password('123456')
+        admin.set_password('992132')
         db.session.add(admin)
         db.session.commit()
 
@@ -1865,10 +2259,27 @@ def empresa_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@app.route('/perfil', methods=['GET', 'POST'])
+@login_required
+def perfil():
+    form = TrocarSenhaForm()
+    if form.validate_on_submit():
+        if not current_user.check_password(form.senha_atual.data):
+            flash('Senha atual incorreta.', 'danger')
+            return render_template('perfil.html', form=form)
+        if form.senha_atual.data == form.nova_senha.data:
+            flash('A nova senha deve ser diferente da atual.', 'warning')
+            return render_template('perfil.html', form=form)
+        current_user.set_password(form.nova_senha.data)
+        db.session.commit()    # ESSA LINHA É OBRIGATÓRIA!
+        flash('Senha alterada com sucesso!', 'success')
+        return redirect(url_for('perfil'))
+    return render_template('perfil.html', form=form)
+
 # Criar tabelas e usuário admin
 with app.app_context():
     db.create_all()
-    criar_usuario_admin()
+    # criar_usuario_admin()
     #print("Banco de dados criado/verificado com sucesso!")
 
 if __name__ == '__main__':
